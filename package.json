@@ -1,0 +1,37 @@
+{
+  "name": "glpi-mcp-server",
+  "version": "0.1.0",
+  "description": "MCP Server for GLPI IT Service Management - Connect AI assistants to your GLPI instance",
+  "main": "dist/index.js",
+  "bin": {
+    "glpi-mcp-server": "dist/index.js"
+  },
+  "scripts": {
+    "build": "tsc",
+    "start": "node dist/index.js",
+    "dev": "tsc --watch"
+  },
+  "keywords": [
+    "mcp",
+    "glpi",
+    "itsm",
+    "helpdesk",
+    "ticketing",
+    "model-context-protocol",
+    "claude",
+    "ai"
+  ],
+  "author": "",
+  "license": "MIT",
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "^1.12.0",
+    "zod": "^3.24.0"
+  },
+  "devDependencies": {
+    "@types/node": "^22.0.0",
+    "typescript": "^5.7.0"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  }
+}
