@@ -189,8 +189,54 @@ glpi-mcp-server/
 └── README.md
 ```
 
-## Roadmap
+## Knowledge Base & Guidelines
 
+This section serves as the continuous knowledge base for project progress, maintainability, and testing.
+
+### Personas
+
+1. **IT Administrator / Analyst (End-User)**: Uses AI assistants (like Claude) connected via this MCP server to manage tickets, search for assets, and automate daily IT operations without opening the GLPI interface.
+2. **MCP Server Developer / Contributor**: TypeScript developer responsible for maintaining the GLPI integration, adding new endpoints, ensuring API backward/forward compatibility (e.g., GLPI 10 REST to GLPI 11 HLAPI), and optimizing performance.
+3. **AI Agent (System Persona)**: The LLM client connecting via MCP that acts as the intelligent middleman. It needs structured, clear, and comprehensive descriptions of tools and schemas to effectively parse user intent into GLPI actions.
+
+### Rules
+
+- **Code & Architecture**: Maintain the clear separation of concerns. Keep `src/services/` for API communication and data formatting, and `src/tools/` for the MCP tool definitions. All new code must be written in TypeScript.
+- **API Interactions**: Always respect GLPI API limits and handle authentication gracefully. Validate `GLPI_USER_TOKEN` and application tokens securely.
+- **Type Safety**: Strictly use TypeScript interfaces and Zod schemas (from `@modelcontextprotocol/sdk`) to validate all inputs from the AI model before passing them to the GLPI client.
+- **Error Handling**: Format errors in a way that the AI Agent can read and relay back to the user clearly (e.g., "Missing permissions" instead of raw 403 stack traces).
+- **Stability**: Ensure the server is stateless and can quickly recover or handle multiple concurrent agent requests.
+- **Documentation Sync**: Every sensitive or architectural code change, new entity mapping, or workflow alteration MUST be immediately reflected inside this `README.md` file to keep it as the reliable single source of truth for the project.
+- **Automated Testing**: All backend components, formatting utilities, and tool abstractions must be covered by automated tests (**Jest**). **See [TESTS.md](./TESTS.md) for full testing rules, routines, and workflows.**
+### Workflows
+
+#### 1. Developing a New Tool
+1. **Define the Schema**: Identify the GLPI endpoints needed. Create Zod schemas for the inputs.
+2. **Implement the Service**: Add the corresponding API call method to `src/services/glpi-client.ts`.
+3. **Create the Tool Module**: Create a new file in `src/tools/` defining the tool's name, description, and execution logic.
+4. **Register**: Import and register the new tool in `src/index.ts`.
+5. **Compile**: Run `npm run build` to update the `dist/` directory.
+
+#### 2. Local Testing Workflow
+1. **Watch Mode**: Run `npm run dev` to automatically recompile TypeScript on save.
+2. **MCP Inspector**: Use the inspector to test the server in isolation (without Claude Desktop):
+   ```bash
+   npx @modelcontextprotocol/inspector node dist/index.js
+   ```
+3. **Configuration**: Supply required environment variables (`GLPI_URL`, `GLPI_USER_TOKEN`) within the inspector's UI to run tests against a staging or test GLPI environment.
+4. **Validation**: Validate successful creation, retrieval, edge cases (e.g., invalid ticket IDs), and proper error returns.
+
+#### 3. Automated Testing Routine (Jest)
+For all instructions related to writing tests, running tests, and test execution rules, please refer directly to the **[TESTS.md](./TESTS.md)** document.
+
+### Skills & Competencies Required
+
+- **TypeScript / Node.js**: Advanced proficiency for robust server-side development.
+- **GLPI Architecture**: Deep understanding of GLPI's Itemtypes (`Ticket`, `Computer`, `User`, `Software`), ITIL concepts, and legacy REST API payload structures.
+- **Model Context Protocol (MCP)**: Knowledge of building and debugging MCP servers using the official `@modelcontextprotocol/sdk`.
+- **System Integration**: Ability to design safe, predictable integrations between unpredictable LLMs and strict database-backed systems.
+
+## Roadmap
 - [ ] GLPI 11 HLAPI support (OAuth2)
 - [ ] MySQL direct read for Pro tier
 - [ ] Additional tools: solutions, tasks, changes, problems

@@ -34,12 +34,12 @@ export enum TicketStatus {
 
 /** Human-readable status labels */
 export const TICKET_STATUS_LABELS: Record<number, string> = {
-  [TicketStatus.NEW]: "New",
-  [TicketStatus.ASSIGNED]: "Assigned",
-  [TicketStatus.PLANNED]: "Planned",
-  [TicketStatus.WAITING]: "Waiting",
-  [TicketStatus.SOLVED]: "Solved",
-  [TicketStatus.CLOSED]: "Closed",
+  [TicketStatus.NEW]: "Novo",
+  [TicketStatus.ASSIGNED]: "Atribuído",
+  [TicketStatus.PLANNED]: "Planejado",
+  [TicketStatus.WAITING]: "Aguardando",
+  [TicketStatus.SOLVED]: "Solucionado",
+  [TicketStatus.CLOSED]: "Fechado",
 };
 
 /** GLPI Ticket priority codes */
@@ -53,12 +53,12 @@ export enum TicketPriority {
 }
 
 export const TICKET_PRIORITY_LABELS: Record<number, string> = {
-  [TicketPriority.VERY_LOW]: "Very Low",
-  [TicketPriority.LOW]: "Low",
-  [TicketPriority.MEDIUM]: "Medium",
-  [TicketPriority.HIGH]: "High",
-  [TicketPriority.VERY_HIGH]: "Very High",
-  [TicketPriority.CRITICAL]: "Critical",
+  [TicketPriority.VERY_LOW]: "Muito Baixa",
+  [TicketPriority.LOW]: "Baixa",
+  [TicketPriority.MEDIUM]: "Média",
+  [TicketPriority.HIGH]: "Alta",
+  [TicketPriority.VERY_HIGH]: "Muito Alta",
+  [TicketPriority.CRITICAL]: "Crítica",
 };
 
 /** GLPI Ticket type */
@@ -68,8 +68,8 @@ export enum TicketType {
 }
 
 export const TICKET_TYPE_LABELS: Record<number, string> = {
-  [TicketType.INCIDENT]: "Incident",
-  [TicketType.REQUEST]: "Request",
+  [TicketType.INCIDENT]: "Incidente",
+  [TicketType.REQUEST]: "Requisição",
 };
 
 /** Raw ticket data from GLPI API */

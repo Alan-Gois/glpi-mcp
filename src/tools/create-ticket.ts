@@ -91,7 +91,7 @@ Examples:
           content: [
             {
               type: "text" as const,
-              text: `Ticket created successfully!\n\n**Ticket ID:** #${ticketId}\n**Title:** ${params.title}\n**Type:** ${params.type}\n**Priority:** ${params.priority}\n\nYou can view it with: glpi_get_ticket(ticket_id=${ticketId})`,
+              text: `Chamado criado com sucesso!\n\n**ID do Chamado:** #${ticketId}\n**Título:** ${params.title}\n**Tipo:** ${params.type === "request" ? "Requisição" : "Incidente"}\n**Prioridade:** ${params.priority}\n\nPara visualizar: glpi_get_ticket(ticket_id=${ticketId})`,
             },
           ],
         };
@@ -99,7 +99,7 @@ Examples:
         const msg = err instanceof Error ? err.message : String(err);
         return {
           content: [
-            { type: "text" as const, text: `Error creating ticket: ${msg}` },
+            { type: "text" as const, text: `Erro ao criar chamado: ${msg}` },
           ],
           isError: true,
         };

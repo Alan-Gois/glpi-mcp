@@ -31,7 +31,7 @@ export function stripHtml(html: string): string {
 /** Format a ticket as a readable summary line */
 export function formatTicketSummary(ticket: Record<string, unknown>): string {
   const id = ticket["id"] ?? ticket["2"] ?? "?";
-  const name = ticket["name"] ?? ticket["1"] ?? "Untitled";
+  const name = ticket["name"] ?? ticket["1"] ?? "Sem título";
   const status = resolveLabel(
     ticket["status"] ?? ticket["12"],
     TICKET_STATUS_LABELS
@@ -49,19 +49,19 @@ export function formatTicketSummary(ticket: Record<string, unknown>): string {
 /** Format a full ticket detail view */
 export function formatTicketDetail(ticket: GlpiTicket): string {
   const lines: string[] = [
-    `# Ticket #${ticket.id}: ${ticket.name}`,
+    `# Chamado #${ticket.id}: ${ticket.name}`,
     "",
     `**Status:** ${TICKET_STATUS_LABELS[ticket.status] ?? ticket.status}`,
-    `**Priority:** ${TICKET_PRIORITY_LABELS[ticket.priority] ?? ticket.priority}`,
-    `**Type:** ${TICKET_TYPE_LABELS[ticket.type] ?? ticket.type}`,
-    `**Created:** ${ticket.date_creation}`,
-    `**Last Updated:** ${ticket.date_mod}`,
+    `**Prioridade:** ${TICKET_PRIORITY_LABELS[ticket.priority] ?? ticket.priority}`,
+    `**Tipo:** ${TICKET_TYPE_LABELS[ticket.type] ?? ticket.type}`,
+    `**Criado em:** ${ticket.date_creation}`,
+    `**Última atualização:** ${ticket.date_mod}`,
   ];
 
-  if (ticket.solvedate) lines.push(`**Solved:** ${ticket.solvedate}`);
-  if (ticket.closedate) lines.push(`**Closed:** ${ticket.closedate}`);
+  if (ticket.solvedate) lines.push(`**Solucionado em:** ${ticket.solvedate}`);
+  if (ticket.closedate) lines.push(`**Fechado em:** ${ticket.closedate}`);
 
-  lines.push("", "## Description", "", stripHtml(ticket.content));
+  lines.push("", "## Descrição", "", stripHtml(ticket.content));
 
   return lines.join("\n");
 }
@@ -70,15 +70,15 @@ export function formatTicketDetail(ticket: GlpiTicket): string {
 export function formatFollowups(
   followups: Array<Record<string, unknown>>
 ): string {
-  if (!followups.length) return "\n_No followups yet._";
+  if (!followups.length) return "\n_Nenhum acompanhamento registrado._";
 
-  const lines = ["\n## Followups", ""];
+  const lines = ["\n## Acompanhamentos", ""];
   for (const fu of followups) {
     const date = fu["date_creation"] ?? "";
-    const user = fu["users_id"] ?? "Unknown";
-    const priv = fu["is_private"] === 1 ? " [PRIVATE]" : "";
+    const user = fu["users_id"] ?? "Desconhecido";
+    const priv = fu["is_private"] === 1 ? " [PRIVADO]" : "";
     const content = stripHtml(String(fu["content"] ?? ""));
-    lines.push(`**${date}** — User #${user}${priv}`);
+    lines.push(`**${date}** — Usuário #${user}${priv}`);
     lines.push(content);
     lines.push("---");
   }
@@ -105,6 +105,6 @@ export function truncateIfNeeded(text: string): string {
   if (text.length <= CHARACTER_LIMIT) return text;
   return (
     text.slice(0, CHARACTER_LIMIT - 100) +
-    "\n\n... [Response truncated. Use more specific filters to reduce results.]"
+    "\n\n... [Resposta truncada. Use filtros mais específicos para reduzir os resultados.]"
   );
 }

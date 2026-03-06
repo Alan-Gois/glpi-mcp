@@ -1,0 +1,24 @@
+[dotenv@17.3.1] injecting env (3) from .env -- tip: 🤖 agentic secret storage: https://dotenvx.com/as2
+[
+  {
+    "1": "Instalação do Omissa Horizon",
+    "2": 2026020034,
+    "4": "3234",
+    "15": "2026-02-02 10:45:34",
+    "80": "GOIÁS"
+  },
+  {
+    "1": "Solicitação: Aumento de capacidade de processamento (CPU/vCPUs) – VDI-308-DEV-052",
+    "2": 2026011594,
+    "4": "3234",
+    "15": "2026-01-27 12:03:51",
+    "80": "GOIÁS"
+  },
+  {
+    "1": "Solicitação de memoria RAM 32 GB na VID-308-dev-052",
+    "2": 2026011593,
+    "4": "3234",
+    "15": "2026-01-27 11:51:16",
+    "80": "GOIÁS"
+  }
+]

@@ -285,7 +285,7 @@ export class GlpiClient {
     const params: Record<string, string> = {
       range: `0-${limit - 1}`,
       order: "DESC",
-      sort: "15", // date_mod
+      sort: "date_mod",
       expand_dropdowns: "true",
     };
 
