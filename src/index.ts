@@ -20,6 +20,7 @@ import { registerGetTicket } from "./tools/get-ticket.js";
 import { registerCreateTicket } from "./tools/create-ticket.js";
 import { registerAddFollowup } from "./tools/add-followup.js";
 import { registerSearch } from "./tools/search.js";
+import { registerListSearchOptions } from "./tools/list-search-options.js";
 
 // ----------------------------------------------------------
 // Configuration from environment
@@ -70,11 +71,11 @@ async function main(): Promise<void> {
   // Validate connection on startup
   try {
     await client.initSession();
-    console.error(`Connected to GLPI at ${config.url}`);
+    console.error(`Conectado ao GLPI em ${config.url}`);
   } catch (err) {
     const msg = err instanceof Error ? err.message : String(err);
-    console.error(`Failed to connect to GLPI: ${msg}`);
-    console.error("Check your GLPI_URL and authentication credentials.");
+    console.error(`Falha ao conectar ao GLPI: ${msg}`);
+    console.error("Verifique GLPI_URL e as credenciais de autenticação.");
     process.exit(1);
   }
 
@@ -90,6 +91,7 @@ async function main(): Promise<void> {
   registerCreateTicket(server, client);
   registerAddFollowup(server, client);
   registerSearch(server, client);
+  registerListSearchOptions(server, client);
 
   // Start transport
   const transportType = process.env.TRANSPORT ?? "stdio";
@@ -97,15 +99,15 @@ async function main(): Promise<void> {
   if (transportType === "stdio") {
     const transport = new StdioServerTransport();
     await server.connect(transport);
-    console.error("GLPI MCP Server running on stdio");
+    console.error("GLPI MCP Server rodando via stdio");
   } else {
-    console.error(`Unknown transport: ${transportType}. Use 'stdio'.`);
+    console.error(`Transporte desconhecido: ${transportType}. Use 'stdio'.`);
     process.exit(1);
   }
 
   // Graceful shutdown
   const shutdown = async (): Promise<void> => {
-    console.error("Shutting down GLPI MCP Server...");
+    console.error("Encerrando GLPI MCP Server...");
     await client.killSession();
     process.exit(0);
   };

@@ -128,16 +128,26 @@ Add a followup message to an existing ticket.
 
 ### `glpi_search`
 
-Search across any GLPI item type.
+Search across any GLPI item type. Now supports advanced multi-criteria searches with AND/OR logic!
 
 ```
-"Find all computers in the Finance department"
+"Find all computers where location is Finance and OS is Windows"
 "Search for user named Maria"
 "List HP printers"
 "Find software named Chrome"
 ```
 
 **Supported item types:** Ticket, Computer, User, Software, NetworkEquipment, Monitor, Printer
+
+### `glpi_list_search_options`
+
+Discover all possible search fields and their numeric IDs for any GLPI item type. Essential for advanced searches where fields aren't mapped by default (like Antivirus, installed software, etc.).
+
+```
+"What fields can I search on Computer?"
+"Find antivirus-related fields for Computer"
+"Show all ticket search fields related to SLA"
+```
 
 ## Claude Code Configuration
 
@@ -173,17 +183,18 @@ npx @modelcontextprotocol/inspector node dist/index.js
 ```
 glpi-mcp-server/
 ├── src/
-│   ├── index.ts              # Entry point, server setup
-│   ├── types.ts              # TypeScript types and constants
+│   ├── index.ts                  # Entry point, server setup
+│   ├── types.ts                  # TypeScript types and constants
 │   ├── services/
-│   │   ├── glpi-client.ts    # GLPI REST API client
-│   │   └── formatting.ts     # Response formatting utilities
+│   │   ├── glpi-client.ts        # GLPI REST API client
+│   │   └── formatting.ts         # Response formatting utilities
 │   └── tools/
-│       ├── list-tickets.ts   # glpi_list_tickets
-│       ├── get-ticket.ts     # glpi_get_ticket
-│       ├── create-ticket.ts  # glpi_create_ticket
-│       ├── add-followup.ts   # glpi_add_followup
-│       └── search.ts         # glpi_search
+│       ├── list-tickets.ts       # glpi_list_tickets
+│       ├── get-ticket.ts         # glpi_get_ticket
+│       ├── create-ticket.ts      # glpi_create_ticket
+│       ├── add-followup.ts       # glpi_add_followup
+│       ├── search.ts             # glpi_search (v2 Multi-Criteria)
+│       └── list-search-options.ts # glpi_list_search_options
 ├── package.json
 ├── tsconfig.json
 └── README.md
