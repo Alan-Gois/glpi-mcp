@@ -6,14 +6,20 @@
 export interface GlpiConfig {
   /** Base URL of the GLPI instance (e.g. https://glpi.example.com) */
   url: string;
+  /** API version to use (10 for legacy REST, 11 for HLAPI) */
+  apiVersion: number;
   /** App-Token for API client identification (optional in some setups) */
   appToken?: string;
-  /** User token for authentication (alternative to username/password) */
+  /** User token for authentication (v10 legacy) */
   userToken?: string;
-  /** Username for authentication */
+  /** Username for authentication (v10 legacy) */
   username?: string;
-  /** Password for authentication */
+  /** Password for authentication (v10 legacy) */
   password?: string;
+  /** OAuth2 Client ID for GLPI 11 HLAPI */
+  oauthClientId?: string;
+  /** OAuth2 Client Secret for GLPI 11 HLAPI */
+  oauthSecret?: string;
 }
 
 /** Active session state */

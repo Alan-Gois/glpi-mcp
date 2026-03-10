@@ -31,30 +31,43 @@ function loadConfig(): GlpiConfig {
   if (!url) {
     console.error(
       "ERROR: GLPI_URL environment variable is required.\n" +
-        "Set it to your GLPI instance URL (e.g. https://glpi.example.com)\n"
+      "Set it to your GLPI instance URL (e.g. https://glpi.example.com)\n"
     );
     process.exit(1);
   }
 
-  const config: GlpiConfig = { url };
+  const apiVersion = parseInt(process.env.GLPI_API_VERSION || "10", 10);
+  const config: GlpiConfig = { url, apiVersion };
 
-  // App Token (optional but recommended)
-  if (process.env.GLPI_APP_TOKEN) {
-    config.appToken = process.env.GLPI_APP_TOKEN;
-  }
-
-  // Authentication: User Token takes priority over username/password
-  if (process.env.GLPI_USER_TOKEN) {
-    config.userToken = process.env.GLPI_USER_TOKEN;
-  } else if (process.env.GLPI_USERNAME && process.env.GLPI_PASSWORD) {
-    config.username = process.env.GLPI_USERNAME;
-    config.password = process.env.GLPI_PASSWORD;
+  if (apiVersion === 11) {
+    if (process.env.GLPI_OAUTH_CLIENT_ID && process.env.GLPI_OAUTH_SECRET) {
+      config.oauthClientId = process.env.GLPI_OAUTH_CLIENT_ID;
+      config.oauthSecret = process.env.GLPI_OAUTH_SECRET;
+    } else {
+      console.error(
+        "ERROR: GLPI 11 Authentication requires GLPI_OAUTH_CLIENT_ID and GLPI_OAUTH_SECRET.\n"
+      );
+      process.exit(1);
+    }
   } else {
-    console.error(
-      "ERROR: Authentication required.\n" +
+    // App Token (optional but recommended for v10)
+    if (process.env.GLPI_APP_TOKEN) {
+      config.appToken = process.env.GLPI_APP_TOKEN;
+    }
+
+    // Authentication: User Token takes priority over username/password
+    if (process.env.GLPI_USER_TOKEN) {
+      config.userToken = process.env.GLPI_USER_TOKEN;
+    } else if (process.env.GLPI_USERNAME && process.env.GLPI_PASSWORD) {
+      config.username = process.env.GLPI_USERNAME;
+      config.password = process.env.GLPI_PASSWORD;
+    } else {
+      console.error(
+        "ERROR: Authentication required for GLPI 10.\n" +
         "Set GLPI_USER_TOKEN or both GLPI_USERNAME and GLPI_PASSWORD.\n"
-    );
-    process.exit(1);
+      );
+      process.exit(1);
+    }
   }
 
   return config;

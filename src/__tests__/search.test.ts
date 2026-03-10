@@ -12,7 +12,7 @@ describe('glpi_search tool', () => {
 
     beforeEach(() => {
         jest.clearAllMocks();
-        mockClient = new GlpiClient({ url: 'http://localhost' }) as jest.Mocked<GlpiClient>;
+        mockClient = new GlpiClient({ url: 'http://localhost', apiVersion: 10 }) as jest.Mocked<GlpiClient>;
         mockServer = {
             registerTool: jest.fn((name, config, callback) => {
                 registeredCallback = callback;

@@ -17,7 +17,7 @@ Connect AI assistants (Claude, ChatGPT, Copilot) to your **GLPI** IT Service Man
 | GLPI Version | API | Status |
 |-------------|-----|--------|
 | 10.0.x | Legacy REST API | ✅ Supported |
-| 11.0.x | HLAPI (OAuth2) | 🔜 Coming soon |
+| 11.0.x | HLAPI (OAuth2) | ✅ Supported |
 
 ## Quick Start
 
@@ -81,8 +81,10 @@ After saving the config, restart Claude Desktop. You should see the GLPI tools a
 | `GLPI_URL` | Yes | Base URL of your GLPI instance |
 | `GLPI_USER_TOKEN` | Yes* | User API token (from user profile) |
 | `GLPI_APP_TOKEN` | No | App token (from API client config) |
-| `GLPI_USERNAME` | Yes* | Username (alternative to user token) |
 | `GLPI_PASSWORD` | Yes* | Password (alternative to user token) |
+| `GLPI_API_VERSION` | No | API version (10 for legacy, 11 for HLAPI) |
+| `GLPI_OAUTH_CLIENT_ID` | No* | OAuth2 Client ID (Required for v11) |
+| `GLPI_OAUTH_SECRET` | No* | OAuth2 Client Secret (Required for v11) |
 
 \* Either `GLPI_USER_TOKEN` or both `GLPI_USERNAME` + `GLPI_PASSWORD` are required.
 
@@ -248,7 +250,7 @@ For all instructions related to writing tests, running tests, and test execution
 - **System Integration**: Ability to design safe, predictable integrations between unpredictable LLMs and strict database-backed systems.
 
 ## Roadmap
-- [ ] GLPI 11 HLAPI support (OAuth2)
+- [x] GLPI 11 HLAPI support (OAuth2)
 - [ ] MySQL direct read for Pro tier
 - [ ] Additional tools: solutions, tasks, changes, problems
 - [ ] MCP Resources (status, entities, ticket stats)
