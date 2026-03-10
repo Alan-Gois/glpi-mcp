@@ -21,22 +21,11 @@ export class GlpiClient {
 
   constructor(config: GlpiConfig) {
     this.config = config;
-    // Normalize base URL — remove trailing slash
+    // Normalize base URL — remove trailing slash, append /apirest.php
     const cleanUrl = config.url.replace(/\/+$/, "");
-
-    if (this.config.apiVersion === 11) {
-      // HLAPI uses /api (or specific route mapped in the server like /api.php)
-      if (cleanUrl.includes("/api.php") || cleanUrl.endsWith("/api")) {
-        this.baseUrl = cleanUrl;
-      } else {
-        this.baseUrl = `${cleanUrl}/api.php`;
-      }
-    } else {
-      // Legacy REST uses /apirest.php
-      this.baseUrl = cleanUrl.includes("/apirest.php")
-        ? cleanUrl
-        : `${cleanUrl}/apirest.php`;
-    }
+    this.baseUrl = cleanUrl.includes("/apirest.php")
+      ? cleanUrl
+      : `${cleanUrl}/apirest.php`;
   }
 
   // ----------------------------------------------------------
@@ -45,58 +34,6 @@ export class GlpiClient {
 
   /** Initialize a session with the GLPI API */
   async initSession(): Promise<void> {
-    if (this.config.apiVersion === 11) {
-      await this.initOAuthSession();
-    } else {
-      await this.initLegacySession();
-    }
-  }
-
-  private async initOAuthSession(): Promise<void> {
-    const url = `${this.baseUrl}/token`;
-
-    const body = new URLSearchParams();
-
-    if (this.config.username && this.config.password) {
-      body.append("grant_type", "password");
-      body.append("username", this.config.username);
-      body.append("password", this.config.password);
-      body.append("scope", "api");
-    } else {
-      body.append("grant_type", "client_credentials");
-    }
-
-    body.append("client_id", this.config.oauthClientId || "");
-    body.append("client_secret", this.config.oauthSecret || "");
-
-    const credentials = Buffer.from(
-      `${this.config.oauthClientId}:${this.config.oauthSecret}`
-    ).toString("base64");
-
-    const response = await this.fetchWithTimeout(url, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/x-www-form-urlencoded",
-        "Authorization": `Basic ${credentials}`
-      },
-      body,
-    });
-
-    if (!response.ok) {
-      const errorBody = await response.text();
-      throw new Error(
-        `GLPI OAuth2 failed (${response.status}): ${errorBody}`
-      );
-    }
-
-    const data = (await response.json()) as { access_token: string; expires_in?: number };
-    this.session = {
-      sessionToken: data.access_token,
-      expiresAt: Date.now() + (data.expires_in ? data.expires_in * 1000 : 30 * 60 * 1000),
-    };
-  }
-
-  private async initLegacySession(): Promise<void> {
     const headers: Record<string, string> = {
       "Content-Type": "application/json",
     };
@@ -152,13 +89,11 @@ export class GlpiClient {
   async killSession(): Promise<void> {
     if (!this.session) return;
     try {
-      if (this.config.apiVersion === 10) {
-        const headers = this.buildHeaders(this.session.sessionToken);
-        await this.fetchWithTimeout(`${this.baseUrl}/killSession`, {
-          method: "GET",
-          headers,
-        });
-      }
+      const headers = this.buildHeaders(this.session.sessionToken);
+      await this.fetchWithTimeout(`${this.baseUrl}/killSession`, {
+        method: "GET",
+        headers,
+      });
     } catch {
       // Ignore errors on kill
     }
@@ -171,16 +106,11 @@ export class GlpiClient {
 
   private buildHeaders(sessionToken: string): Record<string, string> {
     const headers: Record<string, string> = {
-      "Accept": "application/json",
+      "Content-Type": "application/json",
+      "Session-Token": sessionToken,
     };
-
-    if (this.config.apiVersion === 11) {
-      headers["Authorization"] = `Bearer ${sessionToken}`;
-    } else {
-      headers["Session-Token"] = sessionToken;
-      if (this.config.appToken) {
-        headers["App-Token"] = this.config.appToken;
-      }
+    if (this.config.appToken) {
+      headers["App-Token"] = this.config.appToken;
     }
     return headers;
   }
@@ -224,7 +154,6 @@ export class GlpiClient {
         const init: RequestInit = { method, headers };
         if (body && (method === "POST" || method === "PUT" || method === "PATCH")) {
           init.body = JSON.stringify(body);
-          (init.headers as Record<string, string>)["Content-Type"] = "application/json";
         }
 
         const response = await this.fetchWithTimeout(url, init);
@@ -256,60 +185,6 @@ export class GlpiClient {
     throw lastError ?? new Error("Unexpected error in GLPI request");
   }
 
-  private resolvePath(itemtype: string, id?: number): string {
-    if (this.config.apiVersion === 10) {
-      return id ? `/${itemtype}/${id}` : `/${itemtype}`;
-    }
-
-    // GLPI 11 HLAPI Routing
-    let prefix = "";
-    if (["Ticket", "Problem", "Change", "RecurringTicket"].includes(itemtype)) {
-      prefix = "/Assistance";
-    } else if (
-      [
-        "Computer",
-        "Monitor",
-        "NetworkEquipment",
-        "Peripheral",
-        "Phone",
-        "Printer",
-        "Software",
-        "SoftwareLicense",
-        "Certificate",
-        "Unmanaged",
-        "Appliance",
-      ].includes(itemtype)
-    ) {
-      prefix = "/Assets";
-    }
-
-    const path = `${prefix}/${itemtype}`;
-    return id ? `${path}/${id}` : path;
-  }
-
-  private resolveSubitemPath(
-    itemtype: string,
-    id: number,
-    subItemtype: string,
-    subItemId?: number
-  ): string {
-    if (this.config.apiVersion === 10) {
-      return subItemId
-        ? `/${itemtype}/${id}/${subItemtype}/${subItemId}`
-        : `/${itemtype}/${id}/${subItemtype}`;
-    }
-
-    // GLPI 11 HLAPI Subitem Routing
-    const basePath = this.resolvePath(itemtype, id);
-    let subPath = subItemtype;
-
-    if (itemtype === "Ticket" && (subItemtype === "ITILFollowup" || subItemtype === "Followup")) {
-      subPath = "Timeline/Followup";
-    }
-
-    return subItemId ? `${basePath}/${subPath}/${subItemId}` : `${basePath}/${subPath}`;
-  }
-
   // ----------------------------------------------------------
   // Item Operations (CRUD)
   // ----------------------------------------------------------
@@ -320,7 +195,7 @@ export class GlpiClient {
     id: number,
     params?: Record<string, string>
   ): Promise<T> {
-    return this.request<T>("GET", this.resolvePath(itemtype, id), undefined, params);
+    return this.request<T>("GET", `/${itemtype}/${id}`, undefined, params);
   }
 
   /** Get all items of a type with optional query params */
@@ -328,7 +203,7 @@ export class GlpiClient {
     itemtype: string,
     params?: Record<string, string>
   ): Promise<T> {
-    return this.request<T>("GET", this.resolvePath(itemtype), undefined, params);
+    return this.request<T>("GET", `/${itemtype}`, undefined, params);
   }
 
   /** Get sub-items (e.g. followups of a ticket) */
@@ -340,7 +215,7 @@ export class GlpiClient {
   ): Promise<T> {
     return this.request<T>(
       "GET",
-      this.resolveSubitemPath(itemtype, id, subItemtype),
+      `/${itemtype}/${id}/${subItemtype}`,
       undefined,
       params
     );
@@ -351,8 +226,7 @@ export class GlpiClient {
     itemtype: string,
     data: Record<string, unknown>
   ): Promise<T> {
-    const body = this.config.apiVersion === 11 ? data : { input: data };
-    return this.request<T>("POST", this.resolvePath(itemtype), body);
+    return this.request<T>("POST", `/${itemtype}`, { input: data });
   }
 
   /** Update an existing item */
@@ -361,23 +235,7 @@ export class GlpiClient {
     id: number,
     data: Record<string, unknown>
   ): Promise<T> {
-    const body = this.config.apiVersion === 11 ? data : { input: data };
-    return this.request<T>("PUT", this.resolvePath(itemtype, id), body);
-  }
-
-  /** Create a sub-item (e.g. followup for a ticket) */
-  async createSubItem<T = Record<string, unknown>>(
-    itemtype: string,
-    id: number,
-    subItemtype: string,
-    data: Record<string, unknown>
-  ): Promise<T> {
-    const body = this.config.apiVersion === 11 ? data : { input: data };
-    return this.request<T>(
-      "POST",
-      this.resolveSubitemPath(itemtype, id, subItemtype),
-      body
-    );
+    return this.request<T>("PUT", `/${itemtype}/${id}`, { input: data });
   }
 
   // ----------------------------------------------------------
@@ -407,13 +265,9 @@ export class GlpiClient {
       }
     });
 
-    const path = this.config.apiVersion === 11
-      ? this.resolvePath(itemtype) // In HLAPI searching is often on the resource itself
-      : `/search/${itemtype}`;
-
     return this.request<GlpiSearchResult>(
       "GET",
-      path,
+      `/search/${itemtype}`,
       undefined,
       queryParams
     );
@@ -431,7 +285,7 @@ export class GlpiClient {
     const params: Record<string, string> = {
       range: `0-${limit - 1}`,
       order: "DESC",
-      sort: "date_mod",
+      sort: "date_mod", // Use field name for direct getItems sorting
       expand_dropdowns: "true",
     };
 
@@ -500,24 +354,123 @@ export class GlpiClient {
     content: string,
     isPrivate: boolean = false
   ): Promise<{ id: number; message: string }> {
-    const payload = {
-      content,
-      is_private: isPrivate ? 1 : 0,
-    };
-
-    if (this.config.apiVersion === 11) {
-      return this.createSubItem<{ id: number; message: string }>(
-        "Ticket",
-        ticketId,
-        "Followup",
-        payload
-      );
-    }
-
     return this.createItem<{ id: number; message: string }>("ITILFollowup", {
-      ...payload,
       items_id: ticketId,
       itemtype: "Ticket",
+      content,
+      is_private: isPrivate ? 1 : 0,
     });
+  }
+
+  /** Add a solution to a ticket */
+  async addSolution(
+    ticketId: number,
+    content: string,
+    solutiontypes_id?: number
+  ): Promise<{ id: number; message: string }> {
+    const payload: Record<string, unknown> = {
+      items_id: ticketId,
+      itemtype: "Ticket",
+      content,
+    };
+    if (solutiontypes_id) payload.solutiontypes_id = solutiontypes_id;
+
+    return this.createItem<{ id: number; message: string }>(
+      "ITILSolution",
+      payload
+    );
+  }
+
+  /** Update a ticket's fields */
+  async updateTicket(
+    id: number,
+    data: Record<string, unknown>
+  ): Promise<Record<string, unknown>> {
+    return this.updateItem<Record<string, unknown>>("Ticket", id, data);
+  }
+
+  /** Add a task to a ticket */
+  async addTask(
+    ticketId: number,
+    content: string,
+    options?: {
+      is_private?: boolean;
+      state?: number;        // 0=Info, 1=To do, 2=Done
+      actiontime?: number;   // Duration in seconds
+      users_id_tech?: number;
+      groups_id_tech?: number;
+      begin?: string;        // Plan start: "YYYY-MM-DD HH:MM:SS"
+      end?: string;          // Plan end: "YYYY-MM-DD HH:MM:SS"
+    }
+  ): Promise<{ id: number; message: string }> {
+    const payload: Record<string, unknown> = {
+      tickets_id: ticketId,
+      content,
+      is_private: options?.is_private ? 1 : 0,
+      state: options?.state ?? 1,
+    };
+    if (options?.actiontime) payload.actiontime = options.actiontime;
+    if (options?.users_id_tech) payload.users_id_tech = options.users_id_tech;
+    if (options?.groups_id_tech) payload.groups_id_tech = options.groups_id_tech;
+    if (options?.begin) payload.begin = options.begin;
+    if (options?.end) payload.end = options.end;
+
+    return this.createItem<{ id: number; message: string }>(
+      "TicketTask",
+      payload
+    );
+  }
+
+  /** Get tasks for a ticket */
+  async getTicketTasks(
+    ticketId: number
+  ): Promise<Array<Record<string, unknown>>> {
+    return this.getSubItems<Array<Record<string, unknown>>>(
+      "Ticket",
+      ticketId,
+      "TicketTask"
+    );
+  }
+
+  /** Create a change request */
+  async createChange(data: {
+    name: string;
+    content: string;
+    priority?: number;
+    urgency?: number;
+    impact?: number;
+    entities_id?: number;
+  }): Promise<{ id: number; message: string }> {
+    const payload: Record<string, unknown> = {
+      name: data.name,
+      content: data.content,
+      priority: data.priority ?? 3,
+      urgency: data.urgency ?? 3,
+      impact: data.impact ?? 3,
+    };
+    if (data.entities_id) payload.entities_id = data.entities_id;
+
+    return this.createItem<{ id: number; message: string }>("Change", payload);
+  }
+
+  /** Create a problem */
+  async createProblem(data: {
+    name: string;
+    content: string;
+    priority?: number;
+    urgency?: number;
+    impact?: number;
+    entities_id?: number;
+  }): Promise<{ id: number; message: string }> {
+    const payload: Record<string, unknown> = {
+      name: data.name,
+      content: data.content,
+      priority: data.priority ?? 3,
+      urgency: data.urgency ?? 3,
+      impact: data.impact ?? 3,
+    };
+    if (data.entities_id) payload.entities_id = data.entities_id;
+
+    return this.createItem<{ id: number; message: string }>("Problem", payload);
   }
 }

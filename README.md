@@ -9,7 +9,10 @@ Connect AI assistants (Claude, ChatGPT, Copilot) to your **GLPI** IT Service Man
 - **List Tickets** — View open, assigned, waiting, or all tickets
 - **Get Ticket Details** — Full ticket info with description and followup timeline
 - **Create Tickets** — Open incidents or service requests via AI
-- **Add Followups** — Reply to tickets without leaving your AI assistant
+- **Update Tickets** — 🆕 Change status, priority, or attribution
+- **Add Followups & Solutions** — 🆕 Reply to or solve tickets directly
+- **Manage Tasks** — 🆕 Create and view technical tasks for tickets
+- **ITIL Processes** — 🆕 Create Changes and Problems
 - **Search Everything** — Find computers, users, software, printers, and more
 
 ## Supported Versions
@@ -17,7 +20,7 @@ Connect AI assistants (Claude, ChatGPT, Copilot) to your **GLPI** IT Service Man
 | GLPI Version | API | Status |
 |-------------|-----|--------|
 | 10.0.x | Legacy REST API | ✅ Supported |
-| 11.0.x | HLAPI (OAuth2) | ✅ Supported |
+| 11.0.x | Legacy REST API | ✅ Supported |
 
 ## Quick Start
 
@@ -145,11 +148,29 @@ Search across any GLPI item type. Now supports advanced multi-criteria searches 
 
 Discover all possible search fields and their numeric IDs for any GLPI item type. Essential for advanced searches where fields aren't mapped by default (like Antivirus, installed software, etc.).
 
-```
-"What fields can I search on Computer?"
-"Find antivirus-related fields for Computer"
-"Show all ticket search fields related to SLA"
-```
+### `glpi_update_ticket` 🆕
+
+Update an existing ticket's name, content, status, priority, etc.
+
+### `glpi_add_solution` 🆕
+
+Add a solution to a ticket and mark it as solved.
+
+### `glpi_add_task` 🆕
+
+Add a technical task to a ticket with state, planning, and duration.
+
+### `glpi_get_ticket_tasks` 🆕
+
+List all tasks associated with a ticket.
+
+### `glpi_create_change` 🆕
+
+Create an ITIL Change Request.
+
+### `glpi_create_problem` 🆕
+
+Create an ITIL Problem report.
 
 ## Claude Code Configuration
 
@@ -239,6 +260,13 @@ This section serves as the continuous knowledge base for project progress, maint
 3. **Configuration**: Supply required environment variables (`GLPI_URL`, `GLPI_USER_TOKEN`) within the inspector's UI to run tests against a staging or test GLPI environment.
 4. **Validation**: Validate successful creation, retrieval, edge cases (e.g., invalid ticket IDs), and proper error returns.
 
+### Production Notes & Tips
+
+- **Group Search**: GLPI uses hierarchical group names (e.g., `TECH_DEPT > INFRA > NETWORKS`). When searching tickets by group, always use the `contains` search type with the last part of the name (the "leaf") for best results.
+- **Assignment Required**: In some GLPI 11 environments (like Agiliza), you **must** assign a technician to a ticket before the API allows registering a solution. If you get a 400 error when solving, check if the ticket has an assigned technician.
+- **Escalade Plugin**: If your instance uses the *Escalade* plugin, you can search for escalated tickets using field ID `1881` ("Grupo afetado pela escalada").
+- **API Versions**: `GLPI_API_VERSION="11"` enables dynamic routing for v11 path patterns (like `/Assistance/Ticket`), but the server currently prioritizes the stable REST API (`apirest.php`) for both v10 and v11 to ensure advanced search compatibility.
+
 #### 3. Automated Testing Routine (Jest)
 For all instructions related to writing tests, running tests, and test execution rules, please refer directly to the **[TESTS.md](./TESTS.md)** document.
 
@@ -250,11 +278,9 @@ For all instructions related to writing tests, running tests, and test execution
 - **System Integration**: Ability to design safe, predictable integrations between unpredictable LLMs and strict database-backed systems.
 
 ## Roadmap
-- [x] GLPI 11 HLAPI support (OAuth2)
+- [x] GLPI 11 support (Legacy REST)
+- [x] Full ITSM Cycle: Solutions, Tasks, Changes, Problems
 - [ ] MySQL direct read for Pro tier
-- [ ] Additional tools: solutions, tasks, changes, problems
-- [ ] MCP Resources (status, entities, ticket stats)
-- [ ] MCP Prompts (analyze ticket, daily report)
 - [ ] Docker image
 - [ ] npm publishing
 

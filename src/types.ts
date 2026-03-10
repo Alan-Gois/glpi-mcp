@@ -6,8 +6,8 @@
 export interface GlpiConfig {
   /** Base URL of the GLPI instance (e.g. https://glpi.example.com) */
   url: string;
-  /** API version to use (10 for legacy REST, 11 for HLAPI) */
-  apiVersion: number;
+  /** API version to use (10 for legacy REST, 11 for HLAPI) - Optional, defaults to legacy REST */
+  apiVersion?: number;
   /** App-Token for API client identification (optional in some setups) */
   appToken?: string;
   /** User token for authentication (v10 legacy) */

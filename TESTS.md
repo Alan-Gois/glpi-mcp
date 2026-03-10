@@ -17,15 +17,26 @@ This document outlines the testing strategies, rules, and workflows for the GLPI
 
 ## Workflows
 
-### 1. Running Tests Locally
-To validate all existing functionalities, run the test suite:
+### 1. Running Unit Tests (Mocked)
+To validate business logic without hitting real APIs, run the mocked test suite:
 ```bash
 # Run all tests once
 npm test
 
-# Run tests in watch mode (ideal for active development)
+# Run tests in watch mode
 npm run test:watch
 ```
+
+### 2. Running Real Integration Tests (Against Live GLPI)
+For critical validation of payload structures and cross-version compatibility (v10 vs v11), use the integration scripts:
+
+1. **Configure your `.env`**: Switch the active target (Demandas or Agiliza).
+2. **Execute Validation Script**:
+```bash
+# Full ITSM Cycle (Tickets, Tasks, Problems, Changes)
+node test-full-itsm.mjs
+```
+3. **Verify Execution**: Check the output and verify IDs and statuses manually in the GLPI interface or via `verify-test.mjs`.
 *(Note: to use watch mode, you may add `"test:watch": "jest --watch"` to package.json).*
 
 ### 2. Writing a New Unit Test
@@ -39,6 +50,38 @@ Whenever you create a new logic block, follow this workflow:
 ## Continuous Integration (CI)
 
 Our goal is to integrate `npm test` into the CI/CD pipeline (e.g., GitHub Actions). Whenever a Pull Request is opened, the automated system will execute `npm test` to validate the commit. If the pipeline fails, the code will require fixes before being accepted.
+
+## Production Observations & Edge Cases (Agiliza vs Demandas)
+
+### 1. Group Hierarchies & Search
+The same physical team might have different hierarchical paths and names in each instance. Searches must use the "contains" type with the specific leaf name:
+- **Agiliza (v11)**: Search for `NETWORKS` (Full: `TECH_DEPT > INFRA > NETWORKS`).
+- **Demandas (v10)**: Search for `REDES` (Full path includes prefix `ORG > DEPT > ... > NETWORKS`).
+
+### 2. Business Rules (ITSM Enforcement)
+- **Agiliza (v11)**: Requires a **Technician** (ID Actor type 2) to be assigned to the ticket before a Solution can be registered. Attempting to solve an unassigned ticket will return a 400 error.
+- **Demandas (v10)**: Allows solution registration without strict actor enforcement in basic configurations.
+
+### 3. Plugin Escalade (v11 Agiliza Only)
+- **Field 1881**: "Grupo afetado pela escalada". Used to track tickets moved via the Escalade plugin.
+- **Field 8**: "Grupo técnico". Native field for current ticket ownership in both versions.
+
+## Environments Mapping
+Tests must pass in both major GLPI versions supported:
+
+- **Demandas (GLPI 10)**: Uses the Legacy REST provider. Validates stable ITIL workflows.
+- **Agiliza (GLPI 11)**: Uses the same REST provider but with updated item routing. Validates future-readiness and routing consistency.
+
+## Tool Validation Matrix (v0.2.0)
+Every tool in the following categories must be checked during major releases:
+
+| Tool | Cycle | Manual Validation Step |
+|---|---|---|
+| `glpi_add_solution` | ITSM Solution | Verify if status is set to "Solved" (5). |
+| `glpi_add_task` | Planning | Verify state is "To do" (1) or "Done" (2). |
+| `glpi_create_change` | ITIL Change | Verify successful item creation in Change module. |
+| `glpi_create_problem` | ITIL Problem | Verify successful item creation in Problem module. |
+| `glpi_search` | Discovery | Test complex criteria (AND/OR) with at least 3 fields. |
 
 ## Evolution & Documentation Sync
 Any change to the testing framework or configuration (e.g., changing from Jest to Vitest, or modifying test paths) MUST be documented in this `TESTS.md` file to keep the project's knowledge base updated, adhering to the project's "Documentation Sync" rule established in the `README.md`.

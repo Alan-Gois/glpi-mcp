@@ -14,13 +14,23 @@ import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js"
 import { GlpiClient } from "./services/glpi-client.js";
 import { GlpiConfig } from "./types.js";
 
-// Tools
+// Tools — Ticket Lifecycle
 import { registerListTickets } from "./tools/list-tickets.js";
 import { registerGetTicket } from "./tools/get-ticket.js";
 import { registerCreateTicket } from "./tools/create-ticket.js";
+import { registerUpdateTicket } from "./tools/update-ticket.js";
 import { registerAddFollowup } from "./tools/add-followup.js";
+import { registerAddSolution } from "./tools/add-solution.js";
+import { registerAddTask } from "./tools/add-task.js";
+import { registerGetTicketTasks } from "./tools/get-ticket-tasks.js";
+
+// Tools — Search & Discovery
 import { registerSearch } from "./tools/search.js";
 import { registerListSearchOptions } from "./tools/list-search-options.js";
+
+// Tools — ITIL Processes
+import { registerCreateChange } from "./tools/create-change.js";
+import { registerCreateProblem } from "./tools/create-problem.js";
 
 // ----------------------------------------------------------
 // Configuration from environment
@@ -31,43 +41,30 @@ function loadConfig(): GlpiConfig {
   if (!url) {
     console.error(
       "ERROR: GLPI_URL environment variable is required.\n" +
-      "Set it to your GLPI instance URL (e.g. https://glpi.example.com)\n"
+        "Set it to your GLPI instance URL (e.g. https://glpi.example.com)\n"
     );
     process.exit(1);
   }
 
-  const apiVersion = parseInt(process.env.GLPI_API_VERSION || "10", 10);
-  const config: GlpiConfig = { url, apiVersion };
+  const config: GlpiConfig = { url };
 
-  if (apiVersion === 11) {
-    if (process.env.GLPI_OAUTH_CLIENT_ID && process.env.GLPI_OAUTH_SECRET) {
-      config.oauthClientId = process.env.GLPI_OAUTH_CLIENT_ID;
-      config.oauthSecret = process.env.GLPI_OAUTH_SECRET;
-    } else {
-      console.error(
-        "ERROR: GLPI 11 Authentication requires GLPI_OAUTH_CLIENT_ID and GLPI_OAUTH_SECRET.\n"
-      );
-      process.exit(1);
-    }
+  // App Token (optional but recommended)
+  if (process.env.GLPI_APP_TOKEN) {
+    config.appToken = process.env.GLPI_APP_TOKEN;
+  }
+
+  // Authentication: User Token takes priority over username/password
+  if (process.env.GLPI_USER_TOKEN) {
+    config.userToken = process.env.GLPI_USER_TOKEN;
+  } else if (process.env.GLPI_USERNAME && process.env.GLPI_PASSWORD) {
+    config.username = process.env.GLPI_USERNAME;
+    config.password = process.env.GLPI_PASSWORD;
   } else {
-    // App Token (optional but recommended for v10)
-    if (process.env.GLPI_APP_TOKEN) {
-      config.appToken = process.env.GLPI_APP_TOKEN;
-    }
-
-    // Authentication: User Token takes priority over username/password
-    if (process.env.GLPI_USER_TOKEN) {
-      config.userToken = process.env.GLPI_USER_TOKEN;
-    } else if (process.env.GLPI_USERNAME && process.env.GLPI_PASSWORD) {
-      config.username = process.env.GLPI_USERNAME;
-      config.password = process.env.GLPI_PASSWORD;
-    } else {
-      console.error(
-        "ERROR: Authentication required for GLPI 10.\n" +
+    console.error(
+      "ERROR: Authentication required.\n" +
         "Set GLPI_USER_TOKEN or both GLPI_USERNAME and GLPI_PASSWORD.\n"
-      );
-      process.exit(1);
-    }
+    );
+    process.exit(1);
   }
 
   return config;
@@ -95,16 +92,29 @@ async function main(): Promise<void> {
   // Create MCP server
   const server = new McpServer({
     name: "glpi-mcp-server",
-    version: "0.1.0",
+    version: "0.2.0",
   });
 
   // Register all tools
+  // -- Ticket Lifecycle
   registerListTickets(server, client);
   registerGetTicket(server, client);
   registerCreateTicket(server, client);
+  registerUpdateTicket(server, client);
   registerAddFollowup(server, client);
+  registerAddSolution(server, client);
+  registerAddTask(server, client);
+  registerGetTicketTasks(server, client);
+
+  // -- Search & Discovery
   registerSearch(server, client);
   registerListSearchOptions(server, client);
+
+  // -- ITIL Processes
+  registerCreateChange(server, client);
+  registerCreateProblem(server, client);
+
+  console.error(`12 tools registrados`);
 
   // Start transport
   const transportType = process.env.TRANSPORT ?? "stdio";
