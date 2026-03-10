@@ -473,4 +473,56 @@ export class GlpiClient {
 
     return this.createItem<{ id: number; message: string }>("Problem", payload);
   }
+
+  // ----------------------------------------------------------
+  // Validation Operations
+  // ----------------------------------------------------------
+
+  /** Request validation for a ticket */
+  async createValidation(
+    ticketId: number,
+    validatorId: number,
+    comment?: string
+  ): Promise<{ id: number; message: string }> {
+    const payload: Record<string, unknown> = {
+      tickets_id: ticketId,
+      users_id_validate: validatorId,
+    };
+    if (comment) payload.comment_submission = comment;
+
+    return this.createItem<{ id: number; message: string }>(
+      "TicketValidation",
+      payload
+    );
+  }
+
+  /** Update an existing validation (Approve/Refuse) */
+  async updateValidation(
+    validationId: number,
+    status: number,
+    comment?: string
+  ): Promise<Record<string, unknown>> {
+    const payload: Record<string, unknown> = {
+      status, // 2-Approve, 3-Refuse
+    };
+    if (comment) payload.comment_validation = comment;
+
+    // Validation update usually uses PUT /TicketValidation/{id}
+    return this.updateItem<Record<string, unknown>>(
+      "TicketValidation",
+      validationId,
+      payload
+    );
+  }
+
+  /** Get all validations for a specific ticket */
+  async getValidations(
+    ticketId: number
+  ): Promise<Array<Record<string, unknown>>> {
+    return this.getSubItems<Array<Record<string, unknown>>>(
+      "Ticket",
+      ticketId,
+      "TicketValidation"
+    );
+  }
 }

@@ -32,6 +32,11 @@ import { registerListSearchOptions } from "./tools/list-search-options.js";
 import { registerCreateChange } from "./tools/create-change.js";
 import { registerCreateProblem } from "./tools/create-problem.js";
 
+// Tools — Enterprise Approval
+import { registerRequestValidation } from "./tools/request-validation.js";
+import { registerAnswerValidation } from "./tools/answer-validation.js";
+import { registerGetTicketValidations } from "./tools/get-ticket-validations.js";
+
 // ----------------------------------------------------------
 // Configuration from environment
 // ----------------------------------------------------------
@@ -41,7 +46,7 @@ function loadConfig(): GlpiConfig {
   if (!url) {
     console.error(
       "ERROR: GLPI_URL environment variable is required.\n" +
-        "Set it to your GLPI instance URL (e.g. https://glpi.example.com)\n"
+      "Set it to your GLPI instance URL (e.g. https://glpi.example.com)\n"
     );
     process.exit(1);
   }
@@ -62,7 +67,7 @@ function loadConfig(): GlpiConfig {
   } else {
     console.error(
       "ERROR: Authentication required.\n" +
-        "Set GLPI_USER_TOKEN or both GLPI_USERNAME and GLPI_PASSWORD.\n"
+      "Set GLPI_USER_TOKEN or both GLPI_USERNAME and GLPI_PASSWORD.\n"
     );
     process.exit(1);
   }
@@ -92,7 +97,7 @@ async function main(): Promise<void> {
   // Create MCP server
   const server = new McpServer({
     name: "glpi-mcp-server",
-    version: "0.2.0",
+    version: "0.3.0",
   });
 
   // Register all tools
@@ -110,11 +115,12 @@ async function main(): Promise<void> {
   registerSearch(server, client);
   registerListSearchOptions(server, client);
 
-  // -- ITIL Processes
-  registerCreateChange(server, client);
-  registerCreateProblem(server, client);
+  // -- Enterprise Approval
+  registerRequestValidation(server, client);
+  registerAnswerValidation(server, client);
+  registerGetTicketValidations(server, client);
 
-  console.error(`12 tools registrados`);
+  console.error(`15 tools registrados`);
 
   // Start transport
   const transportType = process.env.TRANSPORT ?? "stdio";

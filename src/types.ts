@@ -67,6 +67,20 @@ export const TICKET_PRIORITY_LABELS: Record<number, string> = {
   [TicketPriority.CRITICAL]: "Crítica",
 };
 
+/** GLPI Validation status codes */
+export enum ValidationStatus {
+  WAITING = 1,
+  APPROVED = 2,
+  REFUSED = 3,
+}
+
+/** Human-readable validation labels */
+export const VALIDATION_STATUS_LABELS: Record<number, string> = {
+  [ValidationStatus.WAITING]: "Aguardando",
+  [ValidationStatus.APPROVED]: "Aprovada",
+  [ValidationStatus.REFUSED]: "Recusada",
+};
+
 /** GLPI Ticket type */
 export enum TicketType {
   INCIDENT = 1,

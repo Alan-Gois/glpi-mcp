@@ -1,6 +1,6 @@
 {
   "name": "glpi-mcp-server",
-  "version": "0.2.0",
+  "version": "0.3.0",
   "description": "MCP Server for GLPI IT Service Management - Connect AI assistants to your GLPI instance",
   "main": "dist/index.js",
   "bin": {

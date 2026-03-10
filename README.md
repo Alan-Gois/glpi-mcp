@@ -172,6 +172,18 @@ Create an ITIL Change Request.
 
 Create an ITIL Problem report.
 
+### `glpi_request_validation` 🆕
+
+Request validation for a ticket from a supervisor or manager.
+
+### `glpi_get_ticket_validations` 🆕
+
+List all validation requests associated with a ticket.
+
+### `glpi_answer_validation` 🆕
+
+Approve or Refuse an existing ticket validation request.
+
 ## Claude Code Configuration
 
 For use with Claude Code, create a `.mcp.json` in your project root:
@@ -241,6 +253,7 @@ This section serves as the continuous knowledge base for project progress, maint
 - **Error Handling**: Format errors in a way that the AI Agent can read and relay back to the user clearly (e.g., "Missing permissions" instead of raw 403 stack traces).
 - **Stability**: Ensure the server is stateless and can quickly recover or handle multiple concurrent agent requests.
 - **Documentation Sync**: Every sensitive or architectural code change, new entity mapping, or workflow alteration MUST be immediately reflected inside this `README.md` file to keep it as the reliable single source of truth for the project.
+- **Roadmap Validation**: The AI Assistant MUST proactively check the `Roadmap` section at the start of every session and update it whenever a feature moves from "In Progress" to "Completed". All new features discussed must be added to the roadmap before implementation begins.
 - **Automated Testing**: All backend components, formatting utilities, and tool abstractions must be covered by automated tests (**Jest**). **See [TESTS.md](./TESTS.md) for full testing rules, routines, and workflows.**
 ### Workflows
 
@@ -278,11 +291,45 @@ For all instructions related to writing tests, running tests, and test execution
 - **System Integration**: Ability to design safe, predictable integrations between unpredictable LLMs and strict database-backed systems.
 
 ## Roadmap
-- [x] GLPI 11 support (Legacy REST)
-- [x] Full ITSM Cycle: Solutions, Tasks, Changes, Problems
-- [ ] MySQL direct read for Pro tier
-- [ ] Docker image
-- [ ] npm publishing
+
+### Core v0.2.0 (Completed ✅)
+- [x] **Cross-Version Support**: Dynamic routing for GLPI 10 (Demandas) and 11 (Agiliza).
+- [x] **Full ITSM Cycle**: Ticket Solution, Tasks, Changes, and Problems.
+- [x] **Advanced Search**: Multi-criteria AND/OR search with field ID mapping.
+- [x] **Escalade Plugin Support**: Field 1881 mapping for Agiliza.
+
+### Enterprise ITSM (v0.3.0) ✅
+- [x] **Approval Workflow (Validations)**:
+  - `glpi_request_validation`: Send approval requests to Managers.
+  - `glpi_answer_validation`: Approve or Reject via Chat.
+  - `glpi_get_ticket_validations`: Monitor status of approvals.
+
+### Core v0.2.0 (Completed ✅)
+- [ ] **Phase 2: Native Forms (FormCreator Core)**: 
+  - `glpi_list_forms`: Discovery of available service catalogs.
+  - `glpi_submit_form`: Structured request submission.
+- [ ] **Phase 3: SLA/OLA Management**:
+  - `glpi_check_prazos`: Real-time monitoring of TTO and TTR countdowns.
+
+## 🚀 Enterprise Blueprint: Approval Workflow
+
+To achieve the Full ITSM Cycle, we will focus first on the **Validation Engine**. This allows the AI to act as a governance layer between the user and the technical execution.
+
+| Asset | GLPI Itemtype | Action | Fields / Logic |
+| :--- | :--- | :--- | :--- |
+| **Request** | `TicketValidation` | `POST` | `tickets_id`, `users_id_validate`, `comment_submission` |
+| **Response**| `TicketValidation` | `PUT` | `status` (2-Approve, 3-Refuse), `comment_validation` |
+| **Check**   | `TicketValidation` | `GET` | Filter by `tickets_id` to prevent duplicate requests. |
+
+**Implementation Strategy:**
+1. **Tool Logic**: The AI must check for existing validations before requesting a new one.
+2. **Status Sync**: If a validation is refused, the AI should optionally move the Ticket to a `Waiting` or `Closed` status automatically.
+3. **Escalation**: Integration with the `Escalade` plugin to ensure validations follow the correct hierarchical chain.
+
+### Infrastructure
+- [ ] **Active Notifications**: Webhook receiver for push alerts (New critical tickets).
+- [ ] **MySQL Direct Read**: Optional engine for high-performance reporting.
+- [ ] **Dockerization**: Ready-to-go deployment image.
 
 ## License
 
