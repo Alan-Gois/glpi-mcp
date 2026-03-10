@@ -161,3 +161,39 @@ export const PRIORITY_NAME_MAP: Record<string, number> = {
   very_high: TicketPriority.VERY_HIGH,
   critical: TicketPriority.CRITICAL,
 };
+
+/** GLPI 11 Native Form definition */
+export interface GlpiForm {
+  id: number;
+  name: string;
+  is_active: number;
+  entities_id: number;
+  is_recursive: number;
+  date_creation: string;
+  date_mod: string;
+  description?: string;
+  uuid?: string;
+  [key: string]: unknown;
+}
+
+/** GLPI 11 Form Question definition */
+export interface GlpiFormQuestion {
+  id: number;
+  forms_id: number;
+  forms_sections_id: number;
+  name: string;
+  description?: string;
+  field_type: string;
+  is_required: number;
+  rank: number;
+  [key: string]: unknown;
+}
+
+/** GLPI 11 Form Section definition */
+export interface GlpiFormSection {
+  id: number;
+  forms_id: number;
+  name: string;
+  rank: number;
+  [key: string]: unknown;
+}

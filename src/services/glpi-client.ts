@@ -8,6 +8,9 @@ import {
   GlpiTicket,
   GlpiFollowup,
   GlpiSearchResult,
+  GlpiForm,
+  GlpiFormQuestion,
+  GlpiFormSection,
 } from "../types.js";
 
 /** Maximum number of session retry attempts */
@@ -195,7 +198,8 @@ export class GlpiClient {
     id: number,
     params?: Record<string, string>
   ): Promise<T> {
-    return this.request<T>("GET", `/${itemtype}/${id}`, undefined, params);
+    const encodedType = encodeURIComponent(itemtype);
+    return this.request<T>("GET", `/${encodedType}/${id}`, undefined, params);
   }
 
   /** Get all items of a type with optional query params */
@@ -203,7 +207,8 @@ export class GlpiClient {
     itemtype: string,
     params?: Record<string, string>
   ): Promise<T> {
-    return this.request<T>("GET", `/${itemtype}`, undefined, params);
+    const encodedType = encodeURIComponent(itemtype);
+    return this.request<T>("GET", `/${encodedType}`, undefined, params);
   }
 
   /** Get sub-items (e.g. followups of a ticket) */
@@ -213,9 +218,11 @@ export class GlpiClient {
     subItemtype: string,
     params?: Record<string, string>
   ): Promise<T> {
+    const encodedType = encodeURIComponent(itemtype);
+    const encodedSubType = encodeURIComponent(subItemtype);
     return this.request<T>(
       "GET",
-      `/${itemtype}/${id}/${subItemtype}`,
+      `/${encodedType}/${id}/${encodedSubType}`,
       undefined,
       params
     );
@@ -226,7 +233,8 @@ export class GlpiClient {
     itemtype: string,
     data: Record<string, unknown>
   ): Promise<T> {
-    return this.request<T>("POST", `/${itemtype}`, { input: data });
+    const encodedType = encodeURIComponent(itemtype);
+    return this.request<T>("POST", `/${encodedType}`, { input: data });
   }
 
   /** Update an existing item */
@@ -235,7 +243,8 @@ export class GlpiClient {
     id: number,
     data: Record<string, unknown>
   ): Promise<T> {
-    return this.request<T>("PUT", `/${itemtype}/${id}`, { input: data });
+    const encodedType = encodeURIComponent(itemtype);
+    return this.request<T>("PUT", `/${encodedType}/${id}`, { input: data });
   }
 
   // ----------------------------------------------------------
@@ -524,5 +533,54 @@ export class GlpiClient {
       ticketId,
       "TicketValidation"
     );
+  }
+
+  // ----------------------------------------------------------
+  // Native Form Operations (GLPI 11)
+  // ----------------------------------------------------------
+
+  /** List active forms in the service catalog */
+  async listForms(params?: Record<string, string>): Promise<GlpiForm[]> {
+    const defaultParams = {
+      is_active: "1",
+      range: "0-50",
+      ...params,
+    };
+    return this.getItems<GlpiForm[]>("Glpi\\Form\\Form", defaultParams);
+  }
+
+  /** Get full details of a form including sections and questions */
+  async getFormDetails(formId: number): Promise<{
+    form: GlpiForm;
+    sections: GlpiFormSection[];
+    questions: GlpiFormQuestion[];
+  }> {
+    const form = await this.getItem<GlpiForm>("Glpi\\Form\\Form", formId);
+
+    // Fetch questions linked to this form
+    // We use getItems with searchText because search/Glpi\Form\Question can fail 400
+    const questions = await this.getItems<GlpiFormQuestion[]>("Glpi\\Form\\Question", {
+      searchText: `forms_id=${formId}`
+    });
+
+    const sections = await this.getItems<GlpiFormSection[]>("Glpi\\Form\\Section", {
+      searchText: `forms_id=${formId}`
+    });
+
+    return {
+      form,
+      sections,
+      questions: questions || [],
+    };
+  }
+
+  /** Submit answers for a native form (GLPI 11) */
+  async submitForm(formId: number, answers: Array<{ questions_id: number; value: unknown }>): Promise<{ id: number; message: string }> {
+    const payload = {
+      forms_id: formId,
+      _answers: answers
+    };
+
+    return this.createItem<{ id: number; message: string }>("Glpi\\Form\\AnswersSet", payload);
   }
 }

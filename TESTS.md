@@ -34,9 +34,9 @@ For critical validation of payload structures and cross-version compatibility (v
 2. **Execute Validation Script**:
 ```bash
 # Full ITSM & Approval Cycle (Tickets, Tasks, Validations, Changes)
-node test-v030-full.mjs
+node test-full-integrated.mjs
 ```
-3. **Verify Execution**: Check the output and verify IDs and statuses manually in the GLPI interface.
+3. **Verify Execution**: Check the console output or `test-result-full.txt` for the success matrix.
 *(Note: to use watch mode, you may add `"test:watch": "jest --watch"` to package.json).*
 
 ### 2. Writing a New Unit Test
@@ -66,6 +66,11 @@ The same physical team might have different hierarchical paths and names in each
 - **Field 1881**: "Grupo afetado pela escalada". Used to track tickets moved via the Escalade plugin.
 - **Field 8**: "Grupo técnico". Native field for current ticket ownership in both versions.
 
+### 4. GLPI 11 Native Forms (Phase 2)
+- **Namespace Support**: GLPI 11 uses namespaced itemtypes (e.g., `Glpi\Form\Form`). API calls must use URL encoding for backslashes (`%5C`).
+- **Search vs. Filter**: The `/search/Glpi\Form\Question` endpoint may return 400 in some environments. Use the base collection endpoint with `searchText` filtering (e.g., `GET /Glpi%5CForm%5CQuestion?searchText=forms_id=1`) for better reliability.
+- **Form Submission**: Submissions are handled via `Glpi\Form\AnswersSet`. Ensure the profile has the "form" right (ID 31) enabled.
+
 ## Environments Mapping
 Tests must pass in both major GLPI versions supported:
 
@@ -85,6 +90,9 @@ Every tool in the following categories must be checked during major releases:
 | `glpi_request_validation` | Approval | Verify record created in `TicketValidation` table. |
 | `glpi_answer_validation` | Approval | Verify status changes to 2 (Approved) or 3 (Refused). |
 | `glpi_get_ticket_validations`| Visibility | List all approval history for a single ticket. |
+| `glpi_list_forms` | Discovery | List active Native Forms in the Service Catalog. |
+| `glpi_get_form_details` | Analysis | Retrieve full schema (Questions/Sections) of a form. |
+| `glpi_submit_form` | Submission | Submit structured answers to create TIckets/Changes. |
 
 ## Evolution & Documentation Sync
 Any change to the testing framework or configuration (e.g., changing from Jest to Vitest, or modifying test paths) MUST be documented in this `TESTS.md` file to keep the project's knowledge base updated, adhering to the project's "Documentation Sync" rule established in the `README.md`.

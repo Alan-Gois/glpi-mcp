@@ -37,6 +37,11 @@ import { registerRequestValidation } from "./tools/request-validation.js";
 import { registerAnswerValidation } from "./tools/answer-validation.js";
 import { registerGetTicketValidations } from "./tools/get-ticket-validations.js";
 
+// Tools — Native Forms (GLPI 11)
+import { registerListForms } from "./tools/list-forms.js";
+import { registerGetFormDetails } from "./tools/get-form-details.js";
+import { registerSubmitForm } from "./tools/submit-form.js";
+
 // ----------------------------------------------------------
 // Configuration from environment
 // ----------------------------------------------------------
@@ -120,7 +125,16 @@ async function main(): Promise<void> {
   registerAnswerValidation(server, client);
   registerGetTicketValidations(server, client);
 
-  console.error(`15 tools registrados`);
+  // -- ITIL Processes
+  registerCreateChange(server, client);
+  registerCreateProblem(server, client);
+
+  // -- Native Forms (GLPI 11)
+  registerListForms(server, client);
+  registerGetFormDetails(server, client);
+  registerSubmitForm(server, client);
+
+  console.error(`18 tools registrados`);
 
   // Start transport
   const transportType = process.env.TRANSPORT ?? "stdio";

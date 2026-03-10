@@ -304,10 +304,11 @@ For all instructions related to writing tests, running tests, and test execution
   - `glpi_answer_validation`: Approve or Reject via Chat.
   - `glpi_get_ticket_validations`: Monitor status of approvals.
 
-### Core v0.2.0 (Completed ✅)
-- [ ] **Phase 2: Native Forms (FormCreator Core)**: 
+### Enterprise ITSM (Development 🏗️)
+- [ ] **Phase 2: Native Forms (FormCreator Core)** 👈 *Current Focus*
   - `glpi_list_forms`: Discovery of available service catalogs.
-  - `glpi_submit_form`: Structured request submission.
+  - `glpi_get_form`: Retrieve questions and form configuration.
+  - `glpi_submit_form`: Submit structured requests (Tickets/Changes).
 - [ ] **Phase 3: SLA/OLA Management**:
   - `glpi_check_prazos`: Real-time monitoring of TTO and TTR countdowns.
 
@@ -325,6 +326,20 @@ To achieve the Full ITSM Cycle, we will focus first on the **Validation Engine**
 1. **Tool Logic**: The AI must check for existing validations before requesting a new one.
 2. **Status Sync**: If a validation is refused, the AI should optionally move the Ticket to a `Waiting` or `Closed` status automatically.
 3. **Escalation**: Integration with the `Escalade` plugin to ensure validations follow the correct hierarchical chain.
+
+## 🚀 Enterprise Blueprint: Native Forms (GLPI 11)
+Technical specification for the Service Catalog core integration.
+
+| Asset | GLPI Itemtype | Action | Logic |
+| :--- | :--- | :--- | :--- |
+| **Catalog** | `Glpi\Form\Form` | `GET` | Discovery of active forms in entity. |
+| **Schema**  | `Glpi\Form\Question`| `GET` | List inputs (text, dropdown) for a form. |
+| **Sections**| `Glpi\Form\Section` | `GET` | Structural grouping of questions. |
+
+**Workflow:**
+1. **Discovery**: AI lists available catalogs using `glpi_list_forms`.
+2. **Setup**: AI fetches questions to build the user interaction.
+3. **Draft**: Submission logic (to be refined in development).
 
 ### Infrastructure
 - [ ] **Active Notifications**: Webhook receiver for push alerts (New critical tickets).
