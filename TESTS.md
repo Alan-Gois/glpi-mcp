@@ -33,10 +33,10 @@ For critical validation of payload structures and cross-version compatibility (v
 1. **Configure your `.env`**: Switch the active target (Demandas or Agiliza).
 2. **Execute Validation Script**:
 ```bash
-# Full ITSM Cycle (Tickets, Tasks, Problems, Changes)
-node test-full-itsm.mjs
+# Full ITSM & Approval Cycle (Tickets, Tasks, Validations, Changes)
+node test-v030-full.mjs
 ```
-3. **Verify Execution**: Check the output and verify IDs and statuses manually in the GLPI interface or via `verify-test.mjs`.
+3. **Verify Execution**: Check the output and verify IDs and statuses manually in the GLPI interface.
 *(Note: to use watch mode, you may add `"test:watch": "jest --watch"` to package.json).*
 
 ### 2. Writing a New Unit Test
@@ -72,7 +72,7 @@ Tests must pass in both major GLPI versions supported:
 - **Demandas (GLPI 10)**: Uses the Legacy REST provider. Validates stable ITIL workflows.
 - **Agiliza (GLPI 11)**: Uses the same REST provider but with updated item routing. Validates future-readiness and routing consistency.
 
-## Tool Validation Matrix (v0.2.0)
+## Tool Validation Matrix (v0.3.0)
 Every tool in the following categories must be checked during major releases:
 
 | Tool | Cycle | Manual Validation Step |
@@ -82,6 +82,9 @@ Every tool in the following categories must be checked during major releases:
 | `glpi_create_change` | ITIL Change | Verify successful item creation in Change module. |
 | `glpi_create_problem` | ITIL Problem | Verify successful item creation in Problem module. |
 | `glpi_search` | Discovery | Test complex criteria (AND/OR) with at least 3 fields. |
+| `glpi_request_validation` | Approval | Verify record created in `TicketValidation` table. |
+| `glpi_answer_validation` | Approval | Verify status changes to 2 (Approved) or 3 (Refused). |
+| `glpi_get_ticket_validations`| Visibility | List all approval history for a single ticket. |
 
 ## Evolution & Documentation Sync
 Any change to the testing framework or configuration (e.g., changing from Jest to Vitest, or modifying test paths) MUST be documented in this `TESTS.md` file to keep the project's knowledge base updated, adhering to the project's "Documentation Sync" rule established in the `README.md`.
