@@ -230,6 +230,8 @@ glpi-mcp-server/
 │       ├── add-followup.ts       # glpi_add_followup
 │       ├── search.ts             # glpi_search (v2 Multi-Criteria)
 │       └── list-search-options.ts # glpi_list_search_options
+├── jest.config.js
+├── .env.example
 ├── package.json
 ├── tsconfig.json
 └── README.md
