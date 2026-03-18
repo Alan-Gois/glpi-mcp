@@ -1,4 +1,7 @@
 import { GlpiClient } from '../services/glpi-client';
+import dotenv from 'dotenv';
+
+dotenv.config(); // Carrega as variáveis de ambiente do arquivo .env
 
 describe('GlpiClient - GLPI 11 HLAPI Compatibility', () => {
     let clientV11: GlpiClient;
@@ -6,12 +9,12 @@ describe('GlpiClient - GLPI 11 HLAPI Compatibility', () => {
 
     beforeEach(() => {
         clientV11 = new GlpiClient({
-            url: 'https://agiliza.example.com/api.php',
-            apiVersion: 11,
-            username: 'testuser',
-            password: 'testpassword',
-            oauthClientId: 'client-id',
-            oauthSecret: 'client-secret'
+            url: process.env.GLPI_API_URL!,
+            apiVersion: parseInt(process.env.GLPI_API_VERSION!, 10),
+            username: process.env.GLPI_USERNAME,
+            password: process.env.GLPI_PASSWORD,
+            oauthClientId: process.env.GLPI_OAUTH_CLIENT_ID,
+            oauthSecret: process.env.GLPI_OAUTH_CLIENT_SECRET,
         });
 
         // @ts-ignore
@@ -58,7 +61,7 @@ describe('GlpiClient - GLPI 11 HLAPI Compatibility', () => {
         await clientV11.getItem('Ticket', 123);
 
         expect(fetchMock).toHaveBeenCalledWith(
-            'https://agiliza.example.com/api.php/Assistance/Ticket/123',
+            `${process.env.GLPI_API_URL}/Assistance/Ticket/123`,
             expect.objectContaining({
                 headers: expect.objectContaining({
                     'Authorization': 'Bearer dummy'
@@ -75,7 +78,7 @@ describe('GlpiClient - GLPI 11 HLAPI Compatibility', () => {
         await clientV11.getItems('Computer');
 
         expect(fetchMock).toHaveBeenCalledWith(
-            'https://agiliza.example.com/api.php/Assets/Computer',
+            `${process.env.GLPI_API_URL}/Assets/Computer`,
             expect.any(Object)
         );
     });
@@ -88,7 +91,7 @@ describe('GlpiClient - GLPI 11 HLAPI Compatibility', () => {
         await clientV11.getTicketFollowups(42);
 
         expect(fetchMock).toHaveBeenCalledWith(
-            'https://agiliza.example.com/api.php/Assistance/Ticket/42/Timeline/Followup',
+            `${process.env.GLPI_API_URL}/Assistance/Ticket/42/Timeline/Followup`,
             expect.any(Object)
         );
     });
