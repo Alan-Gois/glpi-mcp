@@ -1,5 +1,5 @@
 // ============================================================
-// GLPI MCP Server — GLPI REST API Client (v10 Legacy API)
+// GLPI MCP Server — GLPI REST API Client
 // ============================================================
 
 import {
@@ -17,18 +17,34 @@ import {
 const MAX_RETRIES = 2;
 const REQUEST_TIMEOUT_MS = 30_000;
 
+interface GlpiV11Session {
+  accessToken: string;
+  refreshToken: string;
+  expiresAt: number;
+}
+
 export class GlpiClient {
   private config: GlpiConfig;
-  private session: GlpiSession | null = null;
+  private session: GlpiSession | GlpiV11Session | null = null;
   private baseUrl: string;
+  private isV11: boolean;
 
   constructor(config: GlpiConfig) {
     this.config = config;
-    // Normalize base URL — remove trailing slash, append /apirest.php
+    this.isV11 = (this.config.apiVersion ?? 10) >= 11;
+
+    // Normalize base URL — remove trailing slash
     const cleanUrl = config.url.replace(/\/+$/, "");
-    this.baseUrl = cleanUrl.includes("/apirest.php")
-      ? cleanUrl
-      : `${cleanUrl}/apirest.php`;
+
+    if (this.isV11) {
+      this.baseUrl = cleanUrl.includes("/api.php")
+        ? cleanUrl
+        : `${cleanUrl}/api.php`;
+    } else {
+      this.baseUrl = cleanUrl.includes("/apirest.php")
+        ? cleanUrl
+        : `${cleanUrl}/apirest.php`;
+    }
   }
 
   // ----------------------------------------------------------
@@ -37,6 +53,69 @@ export class GlpiClient {
 
   /** Initialize a session with the GLPI API */
   async initSession(): Promise<void> {
+    if (this.isV11) {
+      await this.initV11Session();
+    } else {
+      await this.initLegacySession();
+    }
+  }
+
+  private async initV11Session(): Promise<void> {
+    if (
+      !this.config.username ||
+      !this.config.password ||
+      !this.config.oauthClientId ||
+      !this.config.oauthSecret
+    ) {
+      throw new Error(
+        "GLPI v11 authentication requires GLPI_USERNAME, GLPI_PASSWORD, GLPI_OAUTH_CLIENT_ID, and GLPI_OAUTH_CLIENT_SECRET"
+      );
+    }
+
+    const credentials = Buffer.from(
+      `${this.config.oauthClientId}:${this.config.oauthSecret}`
+    ).toString("base64");
+    const headers: Record<string, string> = {
+      "Content-Type": "application/x-www-form-urlencoded",
+      "Authorization": `Basic ${credentials}`,
+    };
+    if (this.config.appToken) {
+      headers["App-Token"] = this.config.appToken;
+    }
+
+    const body = new URLSearchParams({
+      grant_type: "password",
+      username: this.config.username,
+      password: this.config.password,
+      scope: "api",
+    });
+
+    const response = await this.fetchWithTimeout(`${this.baseUrl}/token`, {
+      method: "POST",
+      headers,
+      body,
+    });
+
+    if (!response.ok) {
+      const errorBody = await response.text();
+      throw new Error(
+        `GLPI v11 auth failed (${response.status}): ${errorBody}`
+      );
+    }
+
+    const data = (await response.json()) as {
+      access_token: string;
+      refresh_token: string;
+      expires_in: number;
+    };
+    this.session = {
+      accessToken: data.access_token,
+      refreshToken: data.refresh_token,
+      expiresAt: Date.now() + (data.expires_in - 60) * 1000, // 60s buffer
+    };
+  }
+
+  private async initLegacySession(): Promise<void> {
     const headers: Record<string, string> = {
       "Content-Type": "application/json",
     };
@@ -54,7 +133,7 @@ export class GlpiClient {
       headers["Authorization"] = `Basic ${credentials}`;
     } else {
       throw new Error(
-        "GLPI authentication requires either GLPI_USER_TOKEN or GLPI_USERNAME + GLPI_PASSWORD"
+        "GLPI legacy authentication requires either GLPI_USER_TOKEN or GLPI_USERNAME + GLPI_PASSWORD"
       );
     }
 
@@ -85,18 +164,25 @@ export class GlpiClient {
     ) {
       await this.initSession();
     }
-    return this.session!.sessionToken;
+    return this.isV11
+      ? (this.session as GlpiV11Session).accessToken
+      : (this.session as GlpiSession).sessionToken;
   }
 
   /** Kill the current session */
   async killSession(): Promise<void> {
     if (!this.session) return;
     try {
-      const headers = this.buildHeaders(this.session.sessionToken);
-      await this.fetchWithTimeout(`${this.baseUrl}/killSession`, {
-        method: "GET",
-        headers,
-      });
+      if (this.isV11) {
+        // v11 uses /killSession, but it requires a POST with refresh_token
+        // For simplicity, we just clear the local session. Re-auth will occur on next call.
+      } else {
+        const headers = this.buildHeaders((this.session as GlpiSession).sessionToken);
+        await this.fetchWithTimeout(`${this.baseUrl}/killSession`, {
+          method: "GET",
+          headers,
+        });
+      }
     } catch {
       // Ignore errors on kill
     }
@@ -107,11 +193,47 @@ export class GlpiClient {
   // Core HTTP helpers
   // ----------------------------------------------------------
 
-  private buildHeaders(sessionToken: string): Record<string, string> {
+  private _resolveItemPath(itemtype: string, id?: number, subItemtype?: string): string {
+    if (!this.isV11) {
+      const encodedType = encodeURIComponent(itemtype);
+      let path = `/${encodedType}`;
+      if (id) path += `/${id}`;
+      if (subItemtype) path += `/${encodeURIComponent(subItemtype)}`;
+      return path;
+    }
+
+    // GLPI 11 Path Resolution
+    const V11_PREFIX_MAP: Record<string, string> = {
+      Ticket: "Assistance",
+      Change: "Assistance",
+      Problem: "Assistance",
+      Default: "Assets", // Default for hardware, software, etc.
+    };
+    
+    // Handle special cases
+    if (itemtype.startsWith("Glpi\\")) { // Native Forms, etc.
+      return `/${itemtype.replace(/\\/g, "/")}${id ? `/${id}` : ""}`;
+    }
+
+    const mainType = itemtype.split("/")[0];
+    const prefix = V11_PREFIX_MAP[mainType] || V11_PREFIX_MAP.Default;
+
+    let path = `/${prefix}/${itemtype}`;
+    if (id) path += `/${id}`;
+    if (subItemtype) path += `/${subItemtype}`; // Sub-items can be complex (e.g., Timeline/Followup)
+
+    return path;
+  }
+
+  private buildHeaders(token: string): Record<string, string> {
     const headers: Record<string, string> = {
       "Content-Type": "application/json",
-      "Session-Token": sessionToken,
     };
+    if (this.isV11) {
+      headers["Authorization"] = `Bearer ${token}`;
+    } else {
+      headers["Session-Token"] = token;
+    }
     if (this.config.appToken) {
       headers["App-Token"] = this.config.appToken;
     }
@@ -175,6 +297,11 @@ export class GlpiClient {
           );
         }
 
+        // Handle 204 No Content
+        if (response.status === 204) {
+          return {} as T;
+        }
+
         return (await response.json()) as T;
       } catch (err) {
         lastError = err instanceof Error ? err : new Error(String(err));
@@ -198,8 +325,8 @@ export class GlpiClient {
     id: number,
     params?: Record<string, string>
   ): Promise<T> {
-    const encodedType = encodeURIComponent(itemtype);
-    return this.request<T>("GET", `/${encodedType}/${id}`, undefined, params);
+    const path = this._resolveItemPath(itemtype, id);
+    return this.request<T>("GET", path, undefined, params);
   }
 
   /** Get all items of a type with optional query params */
@@ -207,8 +334,8 @@ export class GlpiClient {
     itemtype: string,
     params?: Record<string, string>
   ): Promise<T> {
-    const encodedType = encodeURIComponent(itemtype);
-    return this.request<T>("GET", `/${encodedType}`, undefined, params);
+    const path = this._resolveItemPath(itemtype);
+    return this.request<T>("GET", path, undefined, params);
   }
 
   /** Get sub-items (e.g. followups of a ticket) */
@@ -218,14 +345,8 @@ export class GlpiClient {
     subItemtype: string,
     params?: Record<string, string>
   ): Promise<T> {
-    const encodedType = encodeURIComponent(itemtype);
-    const encodedSubType = encodeURIComponent(subItemtype);
-    return this.request<T>(
-      "GET",
-      `/${encodedType}/${id}/${encodedSubType}`,
-      undefined,
-      params
-    );
+    const path = this._resolveItemPath(itemtype, id, subItemtype);
+    return this.request<T>("GET", path, undefined, params);
   }
 
   /** Create a new item */
@@ -233,8 +354,9 @@ export class GlpiClient {
     itemtype: string,
     data: Record<string, unknown>
   ): Promise<T> {
-    const encodedType = encodeURIComponent(itemtype);
-    return this.request<T>("POST", `/${encodedType}`, { input: data });
+    const path = this._resolveItemPath(itemtype);
+    const payload = this.isV11 ? data : { input: data };
+    return this.request<T>("POST", path, payload);
   }
 
   /** Update an existing item */
@@ -243,8 +365,9 @@ export class GlpiClient {
     id: number,
     data: Record<string, unknown>
   ): Promise<T> {
-    const encodedType = encodeURIComponent(itemtype);
-    return this.request<T>("PUT", `/${encodedType}/${id}`, { input: data });
+    const path = this._resolveItemPath(itemtype, id);
+    const payload = this.isV11 ? data : { input: data };
+    return this.request<T>("PUT", path, payload);
   }
 
   // ----------------------------------------------------------
@@ -262,6 +385,7 @@ export class GlpiClient {
     }>,
     params?: Record<string, string>
   ): Promise<GlpiSearchResult> {
+    const path = this.isV11 ? this._resolveItemPath(itemtype) : `/search/${itemtype}`;
     const queryParams: Record<string, string> = { ...params };
 
     // Encode criteria as query parameters
@@ -276,7 +400,7 @@ export class GlpiClient {
 
     return this.request<GlpiSearchResult>(
       "GET",
-      `/search/${itemtype}`,
+      path,
       undefined,
       queryParams
     );
@@ -294,7 +418,7 @@ export class GlpiClient {
     const params: Record<string, string> = {
       range: `0-${limit - 1}`,
       order: "DESC",
-      sort: "date_mod", // Use field name for direct getItems sorting
+      sort: this.isV11 ? "date_mod" : "15", // 15 is date_mod in legacy
       expand_dropdowns: "true",
     };
 
@@ -316,16 +440,16 @@ export class GlpiClient {
   async getTicket(id: number): Promise<GlpiTicket> {
     return this.getItem<GlpiTicket>("Ticket", id, {
       expand_dropdowns: "true",
-      with_logs: "false",
     });
   }
 
   /** Get followups for a ticket */
   async getTicketFollowups(ticketId: number): Promise<GlpiFollowup[]> {
+    const subItemType = this.isV11 ? "Timeline/Followup" : "ITILFollowup";
     return this.getSubItems<GlpiFollowup[]>(
       "Ticket",
       ticketId,
-      "ITILFollowup"
+      subItemType
     );
   }
 
@@ -363,12 +487,17 @@ export class GlpiClient {
     content: string,
     isPrivate: boolean = false
   ): Promise<{ id: number; message: string }> {
-    return this.createItem<{ id: number; message: string }>("ITILFollowup", {
-      items_id: ticketId,
-      itemtype: "Ticket",
+    const itemType = this.isV11 ? `Ticket/${ticketId}/Followup` : "ITILFollowup";
+    const payload: Record<string, unknown> = {
       content,
       is_private: isPrivate ? 1 : 0,
-    });
+    };
+    if (!this.isV11) {
+      payload.items_id = ticketId;
+      payload.itemtype = "Ticket";
+    }
+
+    return this.createItem<{ id: number; message: string }>(itemType, payload);
   }
 
   /** Add a solution to a ticket */
@@ -377,15 +506,21 @@ export class GlpiClient {
     content: string,
     solutiontypes_id?: number
   ): Promise<{ id: number; message: string }> {
+    const itemType = this.isV11 ? "TicketSolution" : "ITILSolution";
     const payload: Record<string, unknown> = {
-      items_id: ticketId,
-      itemtype: "Ticket",
       content,
     };
+    if (this.isV11) {
+      payload.itemtype = "Ticket";
+      payload.items_id = ticketId;
+    } else {
+      payload.items_id = ticketId;
+      payload.itemtype = "Ticket";
+    }
     if (solutiontypes_id) payload.solutiontypes_id = solutiontypes_id;
 
     return this.createItem<{ id: number; message: string }>(
-      "ITILSolution",
+      itemType,
       payload
     );
   }
@@ -412,12 +547,15 @@ export class GlpiClient {
       end?: string;          // Plan end: "YYYY-MM-DD HH:MM:SS"
     }
   ): Promise<{ id: number; message: string }> {
+    const itemType = this.isV11 ? `Ticket/${ticketId}/Task` : "TicketTask";
     const payload: Record<string, unknown> = {
-      tickets_id: ticketId,
       content,
       is_private: options?.is_private ? 1 : 0,
       state: options?.state ?? 1,
     };
+    if (!this.isV11) {
+      payload.tickets_id = ticketId;
+    }
     if (options?.actiontime) payload.actiontime = options.actiontime;
     if (options?.users_id_tech) payload.users_id_tech = options.users_id_tech;
     if (options?.groups_id_tech) payload.groups_id_tech = options.groups_id_tech;
@@ -425,7 +563,7 @@ export class GlpiClient {
     if (options?.end) payload.end = options.end;
 
     return this.createItem<{ id: number; message: string }>(
-      "TicketTask",
+      itemType,
       payload
     );
   }
@@ -434,10 +572,11 @@ export class GlpiClient {
   async getTicketTasks(
     ticketId: number
   ): Promise<Array<Record<string, unknown>>> {
+    const subItemType = this.isV11 ? "Task" : "TicketTask";
     return this.getSubItems<Array<Record<string, unknown>>>(
       "Ticket",
       ticketId,
-      "TicketTask"
+      subItemType
     );
   }
 
@@ -493,14 +632,19 @@ export class GlpiClient {
     validatorId: number,
     comment?: string
   ): Promise<{ id: number; message: string }> {
+    const itemType = this.isV11 ? "TicketValidation" : "TicketValidation"; // Same for both
     const payload: Record<string, unknown> = {
-      tickets_id: ticketId,
+      items_id: ticketId,
+      itemtype: "Ticket",
       users_id_validate: validatorId,
     };
+    if (this.isV11) {
+      delete payload.itemtype; // Not needed in v11 payload
+    }
     if (comment) payload.comment_submission = comment;
 
     return this.createItem<{ id: number; message: string }>(
-      "TicketValidation",
+      itemType,
       payload
     );
   }
@@ -508,15 +652,14 @@ export class GlpiClient {
   /** Update an existing validation (Approve/Refuse) */
   async updateValidation(
     validationId: number,
-    status: number,
+    status: number, // 2-Approve, 3-Refuse
     comment?: string
   ): Promise<Record<string, unknown>> {
     const payload: Record<string, unknown> = {
-      status, // 2-Approve, 3-Refuse
+      status,
     };
     if (comment) payload.comment_validation = comment;
 
-    // Validation update usually uses PUT /TicketValidation/{id}
     return this.updateItem<Record<string, unknown>>(
       "TicketValidation",
       validationId,
@@ -536,11 +679,15 @@ export class GlpiClient {
   }
 
   // ----------------------------------------------------------
-  // Native Form Operations (GLPI 11)
+  // Native Form Operations (GLPI 11+)
   // ----------------------------------------------------------
 
   /** List active forms in the service catalog */
   async listForms(params?: Record<string, string>): Promise<GlpiForm[]> {
+    if (!this.isV11) {
+      console.warn("listForms is only available for GLPI 11+.");
+      return [];
+    }
     const defaultParams = {
       is_active: "1",
       range: "0-50",
@@ -555,27 +702,39 @@ export class GlpiClient {
     sections: GlpiFormSection[];
     questions: GlpiFormQuestion[];
   }> {
+    if (!this.isV11) {
+      throw new Error("getFormDetails is only available for GLPI 11+.");
+    }
     const form = await this.getItem<GlpiForm>("Glpi\\Form\\Form", formId);
 
-    // Fetch questions linked to this form
-    // We use getItems with searchText because search/Glpi\Form\Question can fail 400
     const questions = await this.getItems<GlpiFormQuestion[]>("Glpi\\Form\\Question", {
-      searchText: `forms_id=${formId}`
+      is_active: "1",
+      range: "0-200", // Get all questions for the form
+      "criteria[0][field]": "forms_id",
+      "criteria[0][searchtype]": "equals",
+      "criteria[0][value]": String(formId),
     });
 
     const sections = await this.getItems<GlpiFormSection[]>("Glpi\\Form\\Section", {
-      searchText: `forms_id=${formId}`
+      is_active: "1",
+      range: "0-100",
+      "criteria[0][field]": "forms_id",
+      "criteria[0][searchtype]": "equals",
+      "criteria[0][value]": String(formId),
     });
 
     return {
       form,
-      sections,
+      sections: sections || [],
       questions: questions || [],
     };
   }
 
-  /** Submit answers for a native form (GLPI 11) */
+  /** Submit answers for a native form (GLPI 11+) */
   async submitForm(formId: number, answers: Array<{ questions_id: number; value: unknown }>): Promise<{ id: number; message: string }> {
+    if (!this.isV11) {
+      throw new Error("submitForm is only available for GLPI 11+.");
+    }
     const payload = {
       forms_id: formId,
       _answers: answers

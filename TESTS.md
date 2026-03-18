@@ -39,7 +39,17 @@ node test-full-integrated.mjs
 3. **Verify Execution**: Check the console output or `test-result-full.txt` for the success matrix.
 *(Note: to use watch mode, you may add `"test:watch": "jest --watch"` to package.json).*
 
-### 2. Writing a New Unit Test
+### 3. Validating GLPI 11 HLAPI Compatibility
+A dedicated test suite, `src/__tests__/glpi11.test.ts`, ensures that the `GlpiClient` correctly interacts with the modern GLPI 11 "HLAPI". This is crucial for environments using the latest GLPI version.
+
+This suite specifically covers:
+- **OAuth2 Authentication**: Verifies that the client can perform the OAuth2 Password Grant flow to obtain a bearer token.
+- **V11 Resource Routing**: Confirms that item types are correctly mapped to their new prefixed paths (e.g., `Ticket` -> `Assistance/Ticket`, `Computer` -> `Assets/Computer`).
+- **Sub-Item Mapping**: Ensures that nested resources, like followups, are resolved to their new `Timeline` paths.
+
+Running `npm test` will automatically execute this suite, preventing regressions in GLPI 11 compatibility.
+
+### 4. Writing a New Unit Test
 Whenever you create a new logic block, follow this workflow:
 1. Create a corresponding test file in `src/__tests__/`. For example, if you created `src/services/formatting.ts`, create `src/__tests__/formatting.test.ts`.
 2. Wrap your test suites in `describe('Description', () => { ... })`.

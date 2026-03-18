@@ -10,7 +10,7 @@ describe('GlpiClient - GLPI 11 HLAPI Compatibility', () => {
     beforeEach(() => {
         clientV11 = new GlpiClient({
             url: process.env.GLPI_API_URL!,
-            apiVersion: parseInt(process.env.GLPI_API_VERSION!, 10),
+            apiVersion: 11,
             username: process.env.GLPI_USERNAME,
             password: process.env.GLPI_PASSWORD,
             oauthClientId: process.env.GLPI_OAUTH_CLIENT_ID,
@@ -54,7 +54,7 @@ describe('GlpiClient - GLPI 11 HLAPI Compatibility', () => {
     it('deve resolver rotas corretamente para GLPI 11 (Assistance prefix)', async () => {
         // Setup session so we don't trigger initSession in this test
         // @ts-ignore - accessing private property for test sanity
-        clientV11.session = { sessionToken: 'dummy' };
+        clientV11.session = { accessToken: 'dummy', refreshToken: 'dummy', expiresAt: Date.now() + 3600000 };
 
         fetchMock.mockResolvedValue({ ok: true, json: async () => ({ id: 123, name: 'Ticket 1' }) });
 
@@ -72,27 +72,35 @@ describe('GlpiClient - GLPI 11 HLAPI Compatibility', () => {
 
     it('deve resolver rotas corretamente para Assets no GLPI 11', async () => {
         // @ts-ignore
-        clientV11.session = { sessionToken: 'dummy' };
+        clientV11.session = { accessToken: 'dummy', refreshToken: 'dummy', expiresAt: Date.now() + 3600000 };
         fetchMock.mockResolvedValue({ ok: true, json: async () => [] });
 
         await clientV11.getItems('Computer');
 
         expect(fetchMock).toHaveBeenCalledWith(
             `${process.env.GLPI_API_URL}/Assets/Computer`,
-            expect.any(Object)
+            expect.objectContaining({
+                headers: expect.objectContaining({
+                    'Authorization': 'Bearer dummy'
+                })
+            })
         );
     });
 
     it('deve mapear corretamente o subitem de Followup (Timeline) no GLPI 11', async () => {
         // @ts-ignore
-        clientV11.session = { sessionToken: 'dummy' };
+        clientV11.session = { accessToken: 'dummy', refreshToken: 'dummy', expiresAt: Date.now() + 3600000 };
         fetchMock.mockResolvedValue({ ok: true, json: async () => [] });
 
         await clientV11.getTicketFollowups(42);
 
         expect(fetchMock).toHaveBeenCalledWith(
             `${process.env.GLPI_API_URL}/Assistance/Ticket/42/Timeline/Followup`,
-            expect.any(Object)
+            expect.objectContaining({
+                headers: expect.objectContaining({
+                    'Authorization': 'Bearer dummy'
+                })
+            })
         );
     });
 });
