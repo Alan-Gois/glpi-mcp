@@ -200,8 +200,29 @@ Submit structured answers to a native GLPI 11 form.
 
 ## Claude Code Configuration
 
-For use with Claude Code, create a `.mcp.json` in your project root:
+For use with Claude Code, create a `.mcp.json` in your project root.
 
+**Example for GLPI 11 (OAuth2):**
+```json
+{
+  "mcpServers": {
+    "glpi": {
+      "command": "node",
+      "args": ["/absolute/path/to/glpi-mcp-server/dist/index.js"],
+      "env": {
+        "GLPI_URL": "https://your-glpi-instance.com",
+        "GLPI_API_VERSION": "11",
+        "GLPI_USERNAME": "your_username",
+        "GLPI_PASSWORD": "your_password",
+        "GLPI_OAUTH_CLIENT_ID": "your_client_id",
+        "GLPI_OAUTH_CLIENT_SECRET": "your_client_secret"
+      }
+    }
+  }
+}
+```
+
+**Example for GLPI 10 (Legacy REST):**
 ```json
 {
   "mcpServers": {

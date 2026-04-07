@@ -33,18 +33,14 @@ export class GlpiClient {
     this.config = config;
     this.isV11 = (this.config.apiVersion ?? 10) >= 11;
 
-    // Normalize base URL — remove trailing slash
-    const cleanUrl = config.url.replace(/\/+$/, "");
+    // Normalize base URL — remove trailing slash and existing endpoints
+    const cleanUrl = config.url
+      .replace(/\/+$/, "")
+      .replace(/\/api(rest)?\.php$/, "");
 
-    if (this.isV11) {
-      this.baseUrl = cleanUrl.includes("/api.php")
-        ? cleanUrl
-        : `${cleanUrl}/api.php`;
-    } else {
-      this.baseUrl = cleanUrl.includes("/apirest.php")
-        ? cleanUrl
-        : `${cleanUrl}/apirest.php`;
-    }
+    this.baseUrl = this.isV11
+      ? `${cleanUrl}/api.php`
+      : `${cleanUrl}/apirest.php`;
   }
 
   // ----------------------------------------------------------
