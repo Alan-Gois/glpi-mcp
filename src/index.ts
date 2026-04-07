@@ -5,8 +5,8 @@
 // Connect AI assistants (Claude, ChatGPT, Copilot) to your
 // GLPI IT Service Management instance via MCP.
 //
-// Supports: GLPI 10.0.x (Legacy REST API)
-// Transport: stdio (default) or Streamable HTTP
+// Supports: GLPI 10.0.x (Legacy REST API) and GLPI 11.x (HLAPI)
+// Transport: stdio
 // ============================================================
 
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
@@ -47,7 +47,7 @@ import { registerSubmitForm } from "./tools/submit-form.js";
 // ----------------------------------------------------------
 
 function loadConfig(): GlpiConfig {
-  const url = process.env.GLPI_URL;
+  const url = process.env.GLPI_URL ?? process.env.GLPI_API_URL;
   if (!url) {
     console.error(
       "ERROR: GLPI_URL environment variable is required.\n" +
@@ -58,18 +58,54 @@ function loadConfig(): GlpiConfig {
 
   const config: GlpiConfig = { url };
 
+  if (process.env.GLPI_API_VERSION) {
+    const apiVersion = Number.parseInt(process.env.GLPI_API_VERSION, 10);
+    if (Number.isNaN(apiVersion)) {
+      console.error(
+        "ERROR: GLPI_API_VERSION must be a number (e.g. 10 or 11).\n"
+      );
+      process.exit(1);
+    }
+    config.apiVersion = apiVersion;
+  }
+
   // App Token (optional but recommended)
   if (process.env.GLPI_APP_TOKEN) {
     config.appToken = process.env.GLPI_APP_TOKEN;
   }
 
-  // Authentication: User Token takes priority over username/password
-  if (process.env.GLPI_USER_TOKEN) {
-    config.userToken = process.env.GLPI_USER_TOKEN;
-  } else if (process.env.GLPI_USERNAME && process.env.GLPI_PASSWORD) {
+  if (process.env.GLPI_USERNAME && process.env.GLPI_PASSWORD) {
     config.username = process.env.GLPI_USERNAME;
     config.password = process.env.GLPI_PASSWORD;
-  } else {
+  }
+
+  if (process.env.GLPI_OAUTH_CLIENT_ID) {
+    config.oauthClientId = process.env.GLPI_OAUTH_CLIENT_ID;
+  }
+
+  if (process.env.GLPI_OAUTH_CLIENT_SECRET) {
+    config.oauthSecret = process.env.GLPI_OAUTH_CLIENT_SECRET;
+  }
+
+  const isV11 = (config.apiVersion ?? 10) >= 11;
+  if (isV11) {
+    if (
+      !config.username ||
+      !config.password ||
+      !config.oauthClientId ||
+      !config.oauthSecret
+    ) {
+      console.error(
+        "ERROR: GLPI v11 authentication requires GLPI_USERNAME, GLPI_PASSWORD, GLPI_OAUTH_CLIENT_ID, and GLPI_OAUTH_CLIENT_SECRET.\n"
+      );
+      process.exit(1);
+    }
+  } else if (process.env.GLPI_USER_TOKEN) {
+    // Legacy REST API accepts user tokens and keeps them preferred for v10.
+    config.userToken = process.env.GLPI_USER_TOKEN;
+    delete config.username;
+    delete config.password;
+  } else if (!config.username || !config.password) {
     console.error(
       "ERROR: Authentication required.\n" +
       "Set GLPI_USER_TOKEN or both GLPI_USERNAME and GLPI_PASSWORD.\n"

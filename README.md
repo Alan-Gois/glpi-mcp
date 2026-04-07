@@ -19,8 +19,8 @@ Connect AI assistants (Claude, ChatGPT, Copilot) to your **GLPI** IT Service Man
 
 | GLPI Version | API | Status |
 |-------------|-----|--------|
-| 10.0.x | Legacy REST API | ✅ Supported |
-| 11.0.x | Legacy REST API | ✅ Supported |
+| 10.0.x | Legacy REST API (`/apirest.php`) | ✅ Supported |
+| 11.0.x | HLAPI (`/api.php`) | ✅ Supported |
 
 ## Quick Start
 
@@ -81,15 +81,17 @@ After saving the config, restart Claude Desktop. You should see the GLPI tools a
 
 | Variable | Required | Description |
 |----------|----------|-------------|
-| `GLPI_URL` | Yes | Base URL of your GLPI instance |
-| `GLPI_USER_TOKEN` | Yes* | User API token (from user profile) |
-| `GLPI_APP_TOKEN` | No | App token (from API client config) |
-| `GLPI_PASSWORD` | Yes* | Password (alternative to user token) |
-| `GLPI_API_VERSION` | No | API version (10 for legacy, 11 for HLAPI) |
-| `GLPI_OAUTH_CLIENT_ID` | No* | OAuth2 Client ID (Required for v11) |
-| `GLPI_OAUTH_SECRET` | No* | OAuth2 Client Secret (Required for v11) |
+| `GLPI_URL` | Yes | Base URL of your GLPI instance. Do not include `/api.php` or `/apirest.php` unless you intentionally want to override auto-detection. |
+| `GLPI_API_VERSION` | No | API version. Defaults to `10`; set `11` to enable HLAPI routing and OAuth2 authentication. |
+| `GLPI_USER_TOKEN` | v10 only* | User API token from the user profile. Preferred for GLPI 10 legacy REST auth. |
+| `GLPI_USERNAME` | v11 required** | GLPI username. Also valid for GLPI 10 when used with `GLPI_PASSWORD`. |
+| `GLPI_PASSWORD` | v11 required** | GLPI password. Also valid for GLPI 10 when used with `GLPI_USERNAME`. |
+| `GLPI_APP_TOKEN` | No | App token from API client config. |
+| `GLPI_OAUTH_CLIENT_ID` | v11 required** | OAuth2 Client ID for GLPI 11 HLAPI. |
+| `GLPI_OAUTH_CLIENT_SECRET` | v11 required** | OAuth2 Client Secret for GLPI 11 HLAPI. |
 
-\* Either `GLPI_USER_TOKEN` or both `GLPI_USERNAME` + `GLPI_PASSWORD` are required.
+\* For GLPI 10, either `GLPI_USER_TOKEN` or both `GLPI_USERNAME` + `GLPI_PASSWORD` are required.
+\** For GLPI 11, `GLPI_USERNAME`, `GLPI_PASSWORD`, `GLPI_OAUTH_CLIENT_ID`, and `GLPI_OAUTH_CLIENT_SECRET` are required.
 
 ## Tools Reference
 
@@ -184,6 +186,18 @@ List all validation requests associated with a ticket.
 
 Approve or Refuse an existing ticket validation request.
 
+### `glpi_list_forms` 🆕
+
+Discover available native GLPI 11 forms in the service catalog.
+
+### `glpi_get_form_details` 🆕
+
+Retrieve a native form's questions and sections.
+
+### `glpi_submit_form` 🆕
+
+Submit structured answers to a native GLPI 11 form.
+
 ## Claude Code Configuration
 
 For use with Claude Code, create a `.mcp.json` in your project root:
@@ -224,12 +238,24 @@ glpi-mcp-server/
 │   │   ├── glpi-client.ts        # GLPI REST API client
 │   │   └── formatting.ts         # Response formatting utilities
 │   └── tools/
-│       ├── list-tickets.ts       # glpi_list_tickets
-│       ├── get-ticket.ts         # glpi_get_ticket
-│       ├── create-ticket.ts      # glpi_create_ticket
 │       ├── add-followup.ts       # glpi_add_followup
+│       ├── add-solution.ts       # glpi_add_solution
+│       ├── add-task.ts           # glpi_add_task
+│       ├── answer-validation.ts  # glpi_answer_validation
+│       ├── create-change.ts      # glpi_create_change
+│       ├── create-problem.ts     # glpi_create_problem
+│       ├── create-ticket.ts      # glpi_create_ticket
+│       ├── get-form-details.ts   # glpi_get_form_details
+│       ├── get-ticket.ts         # glpi_get_ticket
+│       ├── get-ticket-tasks.ts   # glpi_get_ticket_tasks
+│       ├── get-ticket-validations.ts # glpi_get_ticket_validations
+│       ├── list-forms.ts         # glpi_list_forms
+│       ├── list-search-options.ts # glpi_list_search_options
+│       ├── list-tickets.ts       # glpi_list_tickets
+│       ├── request-validation.ts # glpi_request_validation
 │       ├── search.ts             # glpi_search (v2 Multi-Criteria)
-│       └── list-search-options.ts # glpi_list_search_options
+│       ├── submit-form.ts        # glpi_submit_form
+│       └── update-ticket.ts      # glpi_update_ticket
 ├── jest.config.js
 ├── .env.example
 ├── package.json
@@ -256,7 +282,7 @@ This section serves as the continuous knowledge base for project progress, maint
 - **Stability**: Ensure the server is stateless and can quickly recover or handle multiple concurrent agent requests.
 - **Documentation Sync**: Every sensitive or architectural code change, new entity mapping, or workflow alteration MUST be immediately reflected inside this `README.md` file to keep it as the reliable single source of truth for the project.
 - **Roadmap Validation**: The AI Assistant MUST proactively check the `Roadmap` section at the start of every session and update it whenever a feature moves from "In Progress" to "Completed". All new features discussed must be added to the roadmap before implementation begins.
-- **Automated Testing**: All backend components, formatting utilities, and tool abstractions must be covered by automated tests (**Jest**). **See [TESTS.md](./TESTS.md) for full testing rules, routines, and workflows.**
+- **Automated Testing**: New or changed backend components, formatting utilities, and tool abstractions must be covered by automated tests (**Jest**). **See [TESTS.md](./TESTS.md) for full testing rules, routines, and workflows.**
 ### Workflows
 
 #### 1. Developing a New Tool
@@ -272,15 +298,15 @@ This section serves as the continuous knowledge base for project progress, maint
    ```bash
    npx @modelcontextprotocol/inspector node dist/index.js
    ```
-3. **Configuration**: Supply required environment variables (`GLPI_URL`, `GLPI_USER_TOKEN`) within the inspector's UI to run tests against a staging or test GLPI environment.
+3. **Configuration**: Supply required environment variables within the inspector's UI to run tests against a staging or test GLPI environment. For GLPI 10, use `GLPI_URL` plus `GLPI_USER_TOKEN` or `GLPI_USERNAME` + `GLPI_PASSWORD`. For GLPI 11, use `GLPI_URL`, `GLPI_API_VERSION=11`, `GLPI_USERNAME`, `GLPI_PASSWORD`, `GLPI_OAUTH_CLIENT_ID`, and `GLPI_OAUTH_CLIENT_SECRET`.
 4. **Validation**: Validate successful creation, retrieval, edge cases (e.g., invalid ticket IDs), and proper error returns.
 
 ### Production Notes & Tips
 
 - **Group Search**: GLPI uses hierarchical group names (e.g., `TECH_DEPT > INFRA > NETWORKS`). When searching tickets by group, always use the `contains` search type with the last part of the name (the "leaf") for best results.
-- **Assignment Required**: In some GLPI 11 environments (like Agiliza), you **must** assign a technician to a ticket before the API allows registering a solution. If you get a 400 error when solving, check if the ticket has an assigned technician.
+- **Assignment Required**: In some `glpi11` environments, you **must** assign a technician to a ticket before the API allows registering a solution. If you get a 400 error when solving, check if the ticket has an assigned technician.
 - **Escalade Plugin**: If your instance uses the *Escalade* plugin, you can search for escalated tickets using field ID `1881` ("Grupo afetado pela escalada").
-- **API Versions**: `GLPI_API_VERSION="11"` enables dynamic routing for v11 path patterns (like `/Assistance/Ticket`), but the server currently prioritizes the stable REST API (`apirest.php`) for both v10 and v11 to ensure advanced search compatibility.
+- **API Versions**: `GLPI_API_VERSION="11"` enables HLAPI routing through `/api.php` with path patterns like `/Assistance/Ticket`. Without this variable, the server defaults to GLPI 10 legacy REST routing through `/apirest.php`.
 
 #### 3. Automated Testing Routine (Jest)
 For all instructions related to writing tests, running tests, and test execution rules, please refer directly to the **[TESTS.md](./TESTS.md)** document.
@@ -295,22 +321,22 @@ For all instructions related to writing tests, running tests, and test execution
 ## Roadmap
 
 ### Core v0.2.0 (Completed ✅)
-- [x] **Cross-Version Support**: Dynamic routing for GLPI 10 (Demandas) and 11 (Agiliza).
+- [x] **Cross-Version Support**: Dynamic routing for `glpi10` and `glpi11`.
 - [x] **Full ITSM Cycle**: Ticket Solution, Tasks, Changes, and Problems.
 - [x] **Advanced Search**: Multi-criteria AND/OR search with field ID mapping.
-- [x] **Escalade Plugin Support**: Field 1881 mapping for Agiliza.
+- [x] **Escalade Plugin Support**: Field 1881 mapping for `glpi11`.
 
 ### Enterprise ITSM (v0.3.0) ✅
 - [x] **Approval Workflow (Validations)**:
   - `glpi_request_validation`: Send approval requests to Managers.
   - `glpi_answer_validation`: Approve or Reject via Chat.
   - `glpi_get_ticket_validations`: Monitor status of approvals.
+- [x] **Native Forms (GLPI 11)**:
+  - `glpi_list_forms`: Discovery of available service catalogs.
+  - `glpi_get_form_details`: Retrieve questions and form configuration.
+  - `glpi_submit_form`: Submit structured requests (Tickets/Changes).
 
 ### Enterprise ITSM (Development 🏗️)
-- [ ] **Phase 2: Native Forms (FormCreator Core)** 👈 *Current Focus*
-  - `glpi_list_forms`: Discovery of available service catalogs.
-  - `glpi_get_form`: Retrieve questions and form configuration.
-  - `glpi_submit_form`: Submit structured requests (Tickets/Changes).
 - [ ] **Phase 3: SLA/OLA Management**:
   - `glpi_check_prazos`: Real-time monitoring of TTO and TTR countdowns.
 
@@ -340,8 +366,8 @@ Technical specification for the Service Catalog core integration.
 
 **Workflow:**
 1. **Discovery**: AI lists available catalogs using `glpi_list_forms`.
-2. **Setup**: AI fetches questions to build the user interaction.
-3. **Draft**: Submission logic (to be refined in development).
+2. **Setup**: AI fetches questions using `glpi_get_form_details` to build the user interaction.
+3. **Submit**: AI sends structured answers using `glpi_submit_form`.
 
 ### Infrastructure
 - [ ] **Active Notifications**: Webhook receiver for push alerts (New critical tickets).

@@ -6,12 +6,14 @@ description: How to execute and validate tests for the GLPI MCP Server
 
 1. Write your new logic inside the `src/` directory.
 2. Draft the expected test cases in a `*.test.ts` file in `src/__tests__/`.
-3. Use this tool command to automatically run all the test suites to validate your logic.
-
-// turbo-all
-4. Run Jest Test suite locally:
+3. Run the Jest test suite locally:
 ```bash
 npm test
+```
+
+4. For focused local development, use watch mode:
+```bash
+npm run test:watch
 ```
 
 5. Evaluate the command output.
