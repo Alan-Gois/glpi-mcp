@@ -81,6 +81,10 @@ The same physical team might have different hierarchical paths and names in each
 - **Search vs. Filter**: The `/search/Glpi\Form\Question` endpoint may return 400 in some environments. Prefer the base collection endpoint with explicit query parameters for better reliability.
 - **Form Submission**: Submissions are handled via `Glpi\Form\AnswersSet`. Ensure the profile has the "form" right (ID 31) enabled.
 
+### 5. Corporate Firewalls & WAF (WAF Bypass)
+- Custom HTTP Headers like `App-Token` and `Session-Token` are frequently dropped by strict enterprise Web Application Firewalls, leading to `ERROR_WRONG_APP_TOKEN_PARAMETER`.
+- **Architectural Rule**: For GLPI 10 (Legacy REST), the `GlpiClient` must inject tokens into the URL query string (`?app_token=...&session_token=...`). Do not refactor the client to use HTTP headers for these tokens, as it will break production deployments in strict environments.
+
 ## Environments Mapping
 Tests must pass in both major GLPI versions supported:
 

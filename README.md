@@ -324,6 +324,7 @@ This section serves as the continuous knowledge base for project progress, maint
 
 ### Production Notes & Tips
 
+- **WAF / Firewall Bypass**: Strict corporate firewalls often strip custom HTTP headers like `App-Token` or `Session-Token`, causing `400 ERROR_WRONG_APP_TOKEN_PARAMETER` errors. To ensure maximum compatibility, this MCP server automatically injects tokens into the URL query string (`?app_token=...`) instead of HTTP headers for GLPI 10 legacy authentication.
 - **Group Search**: GLPI uses hierarchical group names (e.g., `TECH_DEPT > INFRA > NETWORKS`). When searching tickets by group, always use the `contains` search type with the last part of the name (the "leaf") for best results.
 - **Assignment Required**: In some `glpi11` environments, you **must** assign a technician to a ticket before the API allows registering a solution. If you get a 400 error when solving, check if the ticket has an assigned technician.
 - **Escalade Plugin**: If your instance uses the *Escalade* plugin, you can search for escalated tickets using field ID `1881` ("Grupo afetado pela escalada").

@@ -75,9 +75,7 @@ export class GlpiClient {
       "Content-Type": "application/x-www-form-urlencoded",
       "Authorization": `Basic ${credentials}`,
     };
-    if (this.config.appToken) {
-      headers["App-Token"] = this.config.appToken;
-    }
+    // WAF Bypass: App-Token is sent via querystring, so we do not include it here
 
     const body = new URLSearchParams({
       grant_type: "password",
@@ -116,9 +114,7 @@ export class GlpiClient {
       "Content-Type": "application/json",
     };
 
-    if (this.config.appToken) {
-      headers["App-Token"] = this.config.appToken;
-    }
+    // WAF Bypass: App-Token is sent via querystring, so we do not include it in headers here
 
     if (this.config.userToken) {
       headers["Authorization"] = `user_token ${this.config.userToken}`;
@@ -134,7 +130,7 @@ export class GlpiClient {
     }
 
     const response = await this.fetchWithTimeout(
-      `${this.baseUrl}/initSession`,
+      `${this.baseUrl}/initSession${this.config.appToken ? `?app_token=${this.config.appToken}` : ""}`,
       { method: "GET", headers }
     );
 
@@ -230,9 +226,7 @@ export class GlpiClient {
     } else {
       headers["Session-Token"] = token;
     }
-    if (this.config.appToken) {
-      headers["App-Token"] = this.config.appToken;
-    }
+    // WAF Bypass: App-Token is sent via querystring, so we do not include it here
     return headers;
   }
 
@@ -267,8 +261,16 @@ export class GlpiClient {
         const headers = this.buildHeaders(token);
 
         let url = `${this.baseUrl}${path}`;
-        if (queryParams) {
-          const qs = new URLSearchParams(queryParams).toString();
+        
+        // Inject tokens into query string to bypass strict WAFs dropping custom headers
+        const finalQueryParams: Record<string, string> = { ...queryParams };
+        if (!this.isV11) {
+          if (this.config.appToken) finalQueryParams.app_token = this.config.appToken;
+          finalQueryParams.session_token = token;
+        }
+
+        if (Object.keys(finalQueryParams).length > 0) {
+          const qs = new URLSearchParams(finalQueryParams).toString();
           url += `?${qs}`;
         }
 
