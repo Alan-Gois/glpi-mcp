@@ -429,6 +429,17 @@ Work with the legacy REST API (`GLPI_API_VERSION=10`, also available in GLPI 11)
 
 Dropdown fields come with the id and the name (`projectstates_id` + `projectstates_id_name`).
 
+## Session, profiles, entities and configuration
+
+| Tool | Endpoint |
+|---|---|
+| `glpi_get_my_profiles` / `glpi_get_active_profile` / `glpi_change_active_profile` | `getMyProfiles`, `getActiveProfile`, `changeActiveProfile` |
+| `glpi_get_my_entities` / `glpi_get_active_entities` / `glpi_change_active_entities` | `getMyEntities`, `getActiveEntities`, `changeActiveEntities` |
+| `glpi_get_full_session` | `getFullSession` (use `keys` to limit the output) |
+| `glpi_get_glpi_config` | `getGlpiConfig` (use `keys` to limit the output) |
+
+Passwords, tokens, keys, cookies and hashes are masked in these outputs. `lostPassword` is not exposed.
+
 ## License
 
 MIT. See [LICENSE](LICENSE). Original work by Ageu Bonfim ([ageugyn/glpi-mcp-server](https://github.com/ageugyn/glpi-mcp-server)).

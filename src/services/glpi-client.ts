@@ -454,6 +454,17 @@ export class GlpiClient {
     });
   }
 
+  /** Call a legacy API endpoint that is not tied to an itemtype (getMyProfiles, getGlpiConfig...) */
+  async callEndpoint<T = unknown>(
+    method: "GET" | "POST",
+    endpoint: string,
+    body?: unknown,
+    params?: Record<string, string>
+  ): Promise<T> {
+    this.requireLegacy(endpoint);
+    return this.request<T>(method, `/${endpoint}`, body, params);
+  }
+
   // ----------------------------------------------------------
   // Search
   // ----------------------------------------------------------
