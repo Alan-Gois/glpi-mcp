@@ -122,7 +122,7 @@ describe('item tools registration', () => {
             registerTool: jest.fn((name: string, _config: unknown, cb: Function) => { tools[name] = cb; }),
         } as unknown as McpServer;
         const client = { listItems: jest.fn() } as unknown as GlpiClient;
-        registerItemTools(server, client, { allowDelete });
+        registerItemTools(server, client, { allowDelete, allowMassive: false });
         return { tools, client };
     };
 

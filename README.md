@@ -92,6 +92,7 @@ After saving the config, restart Claude Desktop. You should see the GLPI tools a
 | `GLPI_APP_TOKEN` | No | App token from API client config. |
 | `GLPI_TOKENS_IN_QUERY` | No | `true` to also send tokens in the query string (only for WAFs that strip custom headers). Default: off. |
 | `GLPI_ALLOW_DELETE` | No | `true` to register `glpi_delete_items` (trash by default, `force_purge` to delete permanently). Default: off. |
+| `GLPI_ALLOW_MASSIVE` | No | `true` to register `glpi_massive_action_apply`. Default: off. |
 | `GLPI_MCP_FILES_DIR` | No | Directory where document tools may read/write local files. Default: none (base64 only). |
 | `GLPI_MCP_MAX_FILE_MB` | No | Max document size in MB. Default: 10. |
 | `GLPI_OAUTH_CLIENT_ID` | v11 required** | OAuth2 Client ID for GLPI 11 HLAPI. |
@@ -450,6 +451,14 @@ Passwords, tokens, keys, cookies and hashes are masked in these outputs. `lostPa
 | `glpi_document_download` | Download to a local file (never overwrites) or as base64; SHA-1 checked against GLPI |
 
 Local paths only work inside `GLPI_MCP_FILES_DIR` (no `..`, no absolute paths or symlinks outside it). Without it, only base64 is accepted. Size limit: `GLPI_MCP_MAX_FILE_MB` (default 10).
+
+## Massive actions
+
+| Tool | Endpoint |
+|---|---|
+| `glpi_massive_actions_list` | `getMassiveActions/:itemtype[/:id]` |
+| `glpi_massive_action_parameters` | `getMassiveActionParameters/:itemtype/:action` |
+| `glpi_massive_action_apply` | `applyMassiveAction/:itemtype/:action` — only with `GLPI_ALLOW_MASSIVE=true`; explicit ids (max 500); delete/purge actions also need `GLPI_ALLOW_DELETE=true` |
 
 ## License
 

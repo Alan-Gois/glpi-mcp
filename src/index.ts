@@ -28,6 +28,9 @@ import { registerSessionTools } from "./tools/session.js";
 import { registerDocumentTools } from "./tools/documents.js";
 import { loadFileSandbox } from "./security/files.js";
 
+// Tools — Massive actions
+import { registerMassiveActionTools } from "./tools/massive-actions.js";
+
 // Tools — Ticket Lifecycle
 import { registerListTickets } from "./tools/list-tickets.js";
 import { registerGetTicket } from "./tools/get-ticket.js";
@@ -207,6 +210,9 @@ async function main(): Promise<void> {
 
   // -- Documents
   registerDocumentTools(server, client, loadFileSandbox());
+
+  // -- Massive actions
+  registerMassiveActionTools(server, client, policy);
 
   console.error(`${toolCount} tools registrados`);
 
