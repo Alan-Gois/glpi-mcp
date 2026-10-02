@@ -5,8 +5,8 @@ Primário: GitHub `Alan-Gois/glpi-mcp` (Issues/PRs). Espelho: Gitea (pendente de
 Regra: nada de IPs, usuários, tokens ou dados de empresa neste repositório.
 
 ## Roteiro (Issues)
-- [ ] #1 fundação (CI, dependências, SDK, `list_tickets` no GLPI 11) — em andamento
-- [ ] #2 CRUD genérico de qualquer itemtype
+- [x] #1 fundação (CI, dependências, SDK, `list_tickets` no GLPI 11) — PR #8
+- [x] #2 CRUD genérico de qualquer itemtype (Claude Code, estação do mantenedor)
 - [ ] #3 ferramentas de projetos
 - [ ] #4 sessão, perfis, entidades e configuração
 - [ ] #5 documentos (upload/download)
@@ -20,13 +20,13 @@ Regra: nada de IPs, usuários, tokens ou dados de empresa neste repositório.
 - [x] SDK 1.31.0 + audit zerado (Claude Code, estação do mantenedor)
 - [x] CI GitHub Actions Node 20/22/24 (Claude Code, estação do mantenedor)
 - [x] Teste manual contra GLPI 11 real (Claude Code, estação do mantenedor)
-- [ ] PR `Closes #1` com CI verde
+- [x] PR `Closes #1` com CI verde (#8)
 
 ## Onde parei
-Issue #1 implementada e validada localmente; abrindo o PR.
+Issue #2 implementada e testada contra GLPI 11 real; PR aberto.
 
 ## Próximo passo
-Acompanhar CI do PR #1; depois Issue #2 (CRUD genérico).
+Issue #3 (ferramentas de projetos).
 
 ## Pendências externas
 - GitHub Project "GLPI MCP": requer `gh auth refresh -h github.com -s project`.

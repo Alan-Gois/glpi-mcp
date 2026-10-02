@@ -91,6 +91,7 @@ After saving the config, restart Claude Desktop. You should see the GLPI tools a
 | `GLPI_PASSWORD` | v11 required** | GLPI password. Also valid for GLPI 10 when used with `GLPI_USERNAME`. |
 | `GLPI_APP_TOKEN` | No | App token from API client config. |
 | `GLPI_TOKENS_IN_QUERY` | No | `true` to also send tokens in the query string (only for WAFs that strip custom headers). Default: off. |
+| `GLPI_ALLOW_DELETE` | No | `true` to register `glpi_delete_items` (trash by default, `force_purge` to delete permanently). Default: off. |
 | `GLPI_OAUTH_CLIENT_ID` | v11 required** | OAuth2 Client ID for GLPI 11 HLAPI. |
 | `GLPI_OAUTH_CLIENT_SECRET` | v11 required** | OAuth2 Client Secret for GLPI 11 HLAPI. |
 
@@ -399,6 +400,20 @@ Technical specification for the Service Catalog core integration.
 - [ ] **Active Notifications**: Webhook receiver for push alerts (New critical tickets).
 - [ ] **MySQL Direct Read**: Optional engine for high-performance reporting.
 - [ ] **Dockerization**: Ready-to-go deployment image.
+
+## Generic tools (any itemtype)
+
+Work with the legacy REST API (`GLPI_API_VERSION=10`, also available in GLPI 11):
+
+| Tool | Endpoint |
+|---|---|
+| `glpi_get_item` | `GET /:itemtype/:id` (with_devices, with_logs, ...) |
+| `glpi_get_items` | `GET /:itemtype` with pagination, sort, `searchText`, trash |
+| `glpi_get_sub_items` | `GET /:itemtype/:id/:sub_itemtype` |
+| `glpi_get_multiple_items` | `GET /getMultipleItems` |
+| `glpi_add_items` | `POST /:itemtype` (one or many) |
+| `glpi_update_items` | `PUT /:itemtype` (one or many) |
+| `glpi_delete_items` | `DELETE /:itemtype` — only with `GLPI_ALLOW_DELETE=true` |
 
 ## License
 
