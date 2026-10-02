@@ -28,6 +28,7 @@ Args:
 Returns:
   Confirmation that the validation has been processed.`,
             inputSchema: InputSchema,
+            annotations: { readOnlyHint: false, destructiveHint: false },
         },
         async (params) => {
             try {

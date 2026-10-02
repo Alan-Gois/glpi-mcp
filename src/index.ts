@@ -13,7 +13,10 @@ import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js";
 import { GlpiClient } from "./services/glpi-client.js";
 import { GlpiConfig } from "./types.js";
-import { loadPolicy } from "./security/policy.js";
+import { loadPolicy, ToolPolicy } from "./security/policy.js";
+import { guardServer } from "./security/guard.js";
+import { maskText } from "./security/mask.js";
+import { SERVER_NAME, SERVER_VERSION } from "./version.js";
 
 // Tools — Generic CRUD (any itemtype)
 import { registerItemTools } from "./tools/items.js";
@@ -143,6 +146,13 @@ function loadConfig(): GlpiConfig {
 
 async function main(): Promise<void> {
   const config = loadConfig();
+  let policy: ToolPolicy;
+  try {
+    policy = loadPolicy();
+  } catch (err) {
+    console.error(`ERROR: ${err instanceof Error ? err.message : err}`);
+    process.exit(1);
+  }
   const client = new GlpiClient(config);
 
   // Validate connection on startup
@@ -151,24 +161,19 @@ async function main(): Promise<void> {
     console.error(`Conectado ao GLPI em ${config.url}`);
   } catch (err) {
     const msg = err instanceof Error ? err.message : String(err);
-    console.error(`Falha ao conectar ao GLPI: ${msg}`);
+    console.error(`Falha ao conectar ao GLPI: ${maskText(msg)}`);
     console.error("Verifique GLPI_URL e as credenciais de autenticação.");
     process.exit(1);
   }
 
   // Create MCP server
   const server = new McpServer({
-    name: "glpi-mcp-server",
-    version: "0.3.0",
+    name: SERVER_NAME,
+    version: SERVER_VERSION,
   });
 
-  const policy = loadPolicy();
-  let toolCount = 0;
-  const registerTool = server.registerTool.bind(server) as (...args: unknown[]) => unknown;
-  server.registerTool = ((...args: unknown[]) => {
-    toolCount++;
-    return registerTool(...args);
-  }) as typeof server.registerTool;
+  // Policy filter (read-only mode, allow/deny patterns) + secret masking on every tool
+  const stats = guardServer(server, policy);
 
   // Register all tools
   // -- Ticket Lifecycle
@@ -214,7 +219,11 @@ async function main(): Promise<void> {
   // -- Massive actions
   registerMassiveActionTools(server, client, policy);
 
-  console.error(`${toolCount} tools registrados`);
+  console.error(
+    `${stats.registered.length} tools registrados` +
+    (stats.skipped.length ? ` (${stats.skipped.length} desativados pela política)` : "") +
+    (policy.readOnly ? " — modo somente leitura" : "")
+  );
 
   // Start transport
   const transportType = process.env.TRANSPORT ?? "stdio";

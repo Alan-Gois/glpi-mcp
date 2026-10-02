@@ -454,6 +454,12 @@ export class GlpiClient {
     });
   }
 
+  /** GET /listSearchOptions/:itemtype — search option ids and names of an itemtype */
+  async listSearchOptions(itemtype: string): Promise<Record<string, unknown>> {
+    this.requireLegacy("glpi_list_search_options");
+    return this.request("GET", `/listSearchOptions/${encodeURIComponent(itemtype)}`);
+  }
+
   /** Call a legacy API endpoint that is not tied to an itemtype (getMyProfiles, getGlpiConfig...) */
   async callEndpoint<T = unknown>(
     method: "GET" | "POST",
@@ -508,7 +514,7 @@ export class GlpiClient {
     }>,
     params?: Record<string, string>
   ): Promise<GlpiSearchResult> {
-    const path = this.isV11 ? this._resolveItemPath(itemtype) : `/search/${itemtype}`;
+    const path = this.isV11 ? this._resolveItemPath(itemtype) : `/search/${encodeURIComponent(itemtype)}`;
     const queryParams: Record<string, string> = { ...params };
 
     // Encode criteria as query parameters

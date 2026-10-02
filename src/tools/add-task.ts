@@ -20,6 +20,7 @@ export function registerAddTask(server: McpServer, client: GlpiClient): void {
             title: "Add Task to GLPI Ticket",
             description: "Create a technical task linked to a ticket.",
             inputSchema: InputSchema,
+            annotations: { readOnlyHint: false, destructiveHint: false },
         },
         async (params) => {
             try {

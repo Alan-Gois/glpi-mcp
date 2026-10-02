@@ -31,6 +31,7 @@ Args:
 Returns:
   Formatted list of available forms.`,
             inputSchema: InputSchema,
+            annotations: { readOnlyHint: true, destructiveHint: false, idempotentHint: true },
         },
         async (params) => {
             try {

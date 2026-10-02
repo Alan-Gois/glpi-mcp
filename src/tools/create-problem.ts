@@ -20,6 +20,7 @@ export function registerCreateProblem(server: McpServer, client: GlpiClient): vo
             title: "Create GLPI Problem",
             description: "Report a new ITIL Problem in GLPI.",
             inputSchema: InputSchema,
+            annotations: { readOnlyHint: false, destructiveHint: false },
         },
         async (params) => {
             try {

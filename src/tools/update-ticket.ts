@@ -22,6 +22,7 @@ export function registerUpdateTicket(server: McpServer, client: GlpiClient): voi
             title: "Update GLPI Ticket",
             description: "Update fields of an existing ticket.",
             inputSchema: InputSchema,
+            annotations: { readOnlyHint: false, destructiveHint: false },
         },
         async (params) => {
             try {

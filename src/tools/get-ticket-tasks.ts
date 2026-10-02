@@ -17,6 +17,7 @@ export function registerGetTicketTasks(server: McpServer, client: GlpiClient): v
             title: "Get GLPI Ticket Tasks",
             description: "List all tasks planned or done for a ticket.",
             inputSchema: InputSchema,
+            annotations: { readOnlyHint: true, destructiveHint: false, idempotentHint: true },
         },
         async (params) => {
             try {

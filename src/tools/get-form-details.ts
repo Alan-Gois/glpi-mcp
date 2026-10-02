@@ -25,6 +25,7 @@ Args:
 Returns:
   A detailed breakdown of the form's structure and fields.`,
             inputSchema: InputSchema,
+            annotations: { readOnlyHint: true, destructiveHint: false, idempotentHint: true },
         },
         async (params) => {
             try {
