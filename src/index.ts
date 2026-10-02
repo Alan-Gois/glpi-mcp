@@ -13,6 +13,10 @@ import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js";
 import { GlpiClient } from "./services/glpi-client.js";
 import { GlpiConfig } from "./types.js";
+import { loadPolicy } from "./security/policy.js";
+
+// Tools — Generic CRUD (any itemtype)
+import { registerItemTools } from "./tools/items.js";
 
 // Tools — Ticket Lifecycle
 import { registerListTickets } from "./tools/list-tickets.js";
@@ -145,6 +149,14 @@ async function main(): Promise<void> {
     version: "0.3.0",
   });
 
+  const policy = loadPolicy();
+  let toolCount = 0;
+  const registerTool = server.registerTool.bind(server) as (...args: unknown[]) => unknown;
+  server.registerTool = ((...args: unknown[]) => {
+    toolCount++;
+    return registerTool(...args);
+  }) as typeof server.registerTool;
+
   // Register all tools
   // -- Ticket Lifecycle
   registerListTickets(server, client);
@@ -174,7 +186,10 @@ async function main(): Promise<void> {
   registerGetFormDetails(server, client);
   registerSubmitForm(server, client);
 
-  console.error(`18 tools registrados`);
+  // -- Generic CRUD (any itemtype)
+  registerItemTools(server, client, policy);
+
+  console.error(`${toolCount} tools registrados`);
 
   // Start transport
   const transportType = process.env.TRANSPORT ?? "stdio";

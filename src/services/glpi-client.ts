@@ -12,6 +12,7 @@ import {
   GlpiFormQuestion,
   GlpiFormSection,
 } from "../types.js";
+import { flattenParams, parseContentRange } from "./query.js";
 
 /** Maximum number of session retry attempts */
 const MAX_RETRIES = 2;
@@ -245,22 +246,36 @@ export class GlpiClient {
     }
   }
 
-  /** Execute an authenticated API request with auto-retry on session expiry */
-  private async request<T>(
+  /** Throw a clear error for features that only exist in the legacy REST API (apirest.php) */
+  private requireLegacy(feature: string): void {
+    if (this.isV11) {
+      throw new Error(
+        `${feature} uses the legacy REST API (apirest.php). Set GLPI_API_VERSION=10 ` +
+        `(the legacy API is also available in GLPI 11).`
+      );
+    }
+  }
+
+  /**
+   * Execute an authenticated API request with auto-retry on session expiry.
+   * Returns the raw Response (status already checked) so callers can read headers or binary bodies.
+   */
+  private async send(
     method: string,
     path: string,
     body?: unknown,
-    queryParams?: Record<string, string>
-  ): Promise<T> {
+    queryParams?: Record<string, string>,
+    options: { headers?: Record<string, string>; rawBody?: boolean } = {}
+  ): Promise<Response> {
     let lastError: Error | null = null;
 
     for (let attempt = 0; attempt <= MAX_RETRIES; attempt++) {
       try {
         const token = await this.ensureSession();
-        const headers = this.buildHeaders(token);
+        const headers = { ...this.buildHeaders(token), ...options.headers };
 
         let url = `${this.baseUrl}${path}`;
-        
+
         // Opt-in: also send tokens in the query string for WAFs that drop custom headers
         const finalQueryParams: Record<string, string> = { ...queryParams };
         if (!this.isV11 && this.config.tokensInQuery) {
@@ -274,8 +289,14 @@ export class GlpiClient {
         }
 
         const init: RequestInit = { method, headers };
-        if (body && (method === "POST" || method === "PUT" || method === "PATCH")) {
-          init.body = JSON.stringify(body);
+        if (body !== undefined && ["POST", "PUT", "PATCH", "DELETE"].includes(method)) {
+          if (options.rawBody) {
+            // e.g. multipart FormData: let fetch set the Content-Type with the boundary
+            delete headers["Content-Type"];
+            init.body = body as BodyInit;
+          } else {
+            init.body = JSON.stringify(body);
+          }
         }
 
         const response = await this.fetchWithTimeout(url, init);
@@ -294,12 +315,7 @@ export class GlpiClient {
           );
         }
 
-        // Handle 204 No Content
-        if (response.status === 204) {
-          return {} as T;
-        }
-
-        return (await response.json()) as T;
+        return response;
       } catch (err) {
         lastError = err instanceof Error ? err : new Error(String(err));
         if (attempt < MAX_RETRIES && lastError.message.includes("Session expired")) {
@@ -310,6 +326,21 @@ export class GlpiClient {
     }
 
     throw lastError ?? new Error("Unexpected error in GLPI request");
+  }
+
+  /** Execute an authenticated API request and parse the JSON body */
+  private async request<T>(
+    method: string,
+    path: string,
+    body?: unknown,
+    queryParams?: Record<string, string>
+  ): Promise<T> {
+    const response = await this.send(method, path, body, queryParams);
+    // Handle 204 No Content
+    if (response.status === 204) {
+      return {} as T;
+    }
+    return (await response.json()) as T;
   }
 
   // ----------------------------------------------------------
@@ -365,6 +396,62 @@ export class GlpiClient {
     const path = this._resolveItemPath(itemtype, id);
     const payload = this.isV11 ? data : { input: data };
     return this.request<T>("PUT", path, payload);
+  }
+
+  // ----------------------------------------------------------
+  // Generic item operations (legacy REST API)
+  // ----------------------------------------------------------
+
+  /** GET /:itemtype with pagination info from the Content-Range header */
+  async listItems(
+    itemtype: string,
+    params?: Record<string, string>
+  ): Promise<{ items: Record<string, unknown>[]; range?: { start: number; end: number; total: number } }> {
+    this.requireLegacy("glpi_get_items");
+    const response = await this.send("GET", this._resolveItemPath(itemtype), undefined, params);
+    const items = response.status === 204 ? [] : ((await response.json()) as Record<string, unknown>[]);
+    return { items, range: parseContentRange(response.headers.get("Content-Range")) };
+  }
+
+  /** GET /getMultipleItems — several items of different types in one call */
+  async getMultipleItems(
+    items: Array<{ itemtype: string; items_id: number }>,
+    params?: Record<string, string>
+  ): Promise<Record<string, unknown>[]> {
+    this.requireLegacy("glpi_get_multiple_items");
+    return this.request("GET", "/getMultipleItems", undefined, {
+      ...flattenParams({ items }),
+      ...params,
+    });
+  }
+
+  /** POST /:itemtype — create one or several items */
+  async addItems(
+    itemtype: string,
+    input: Record<string, unknown> | Record<string, unknown>[]
+  ): Promise<unknown> {
+    this.requireLegacy("glpi_add_items");
+    return this.request("POST", this._resolveItemPath(itemtype), { input });
+  }
+
+  /** PUT /:itemtype — update several items (each input must carry its id) */
+  async updateItems(itemtype: string, input: Record<string, unknown>[]): Promise<unknown> {
+    this.requireLegacy("glpi_update_items");
+    return this.request("PUT", this._resolveItemPath(itemtype), { input });
+  }
+
+  /** DELETE /:itemtype — move to trash, or purge with forcePurge */
+  async deleteItems(
+    itemtype: string,
+    ids: number[],
+    options: { forcePurge?: boolean; history?: boolean } = {}
+  ): Promise<unknown> {
+    this.requireLegacy("glpi_delete_items");
+    return this.request("DELETE", this._resolveItemPath(itemtype), {
+      input: ids.map((id) => ({ id })),
+      force_purge: options.forcePurge ?? false,
+      history: options.history ?? true,
+    });
   }
 
   // ----------------------------------------------------------
