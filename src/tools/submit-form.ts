@@ -27,6 +27,7 @@ Args:
 Example:
   answers = { "1": "3", "6": "Reparo de impressora", "7": "A impressora do RH parou." }`,
             inputSchema: InputSchema,
+            annotations: { readOnlyHint: false, destructiveHint: false },
         },
         async (params) => {
             try {

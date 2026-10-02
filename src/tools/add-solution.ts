@@ -19,6 +19,7 @@ export function registerAddSolution(server: McpServer, client: GlpiClient): void
             title: "Add Solution to GLPI Ticket",
             description: "Mark a ticket as solved and provide the solution details.",
             inputSchema: InputSchema,
+            annotations: { readOnlyHint: false, destructiveHint: false },
         },
         async (params) => {
             try {

@@ -5,6 +5,7 @@
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { z } from "zod";
 import { GlpiClient } from "../services/glpi-client.js";
+import { ItemtypeSchema } from "./_shared.js";
 import { truncateIfNeeded } from "../services/formatting.js";
 
 /**
@@ -63,8 +64,7 @@ const CriterionSchema = z.object({
 });
 
 const InputSchema = {
-  itemtype: z
-    .string()
+  itemtype: ItemtypeSchema
     .describe(
       `GLPI item type to search. Common: ${SUPPORTED_ITEMTYPES.join(", ")}. ` +
       `Any valid GLPI itemtype name is accepted.`

@@ -20,6 +20,7 @@ export function registerCreateChange(server: McpServer, client: GlpiClient): voi
             title: "Create GLPI Change Request",
             description: "Open a new ITIL Change in GLPI.",
             inputSchema: InputSchema,
+            annotations: { readOnlyHint: false, destructiveHint: false },
         },
         async (params) => {
             try {

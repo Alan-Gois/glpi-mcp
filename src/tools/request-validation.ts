@@ -29,6 +29,7 @@ Args:
 Returns:
   Confirmation with the new validation ID.`,
             inputSchema: InputSchema,
+            annotations: { readOnlyHint: false, destructiveHint: false },
         },
         async (params) => {
             try {

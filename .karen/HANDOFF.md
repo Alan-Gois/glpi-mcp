@@ -11,7 +11,7 @@ Regra: nada de IPs, usuários, tokens ou dados de empresa neste repositório.
 - [x] #4 sessão, perfis, entidades e configuração (Claude Code, estação do mantenedor)
 - [x] #5 documentos (upload/download) (Claude Code, estação do mantenedor)
 - [x] #6 ações em massa (Claude Code, estação do mantenedor)
-- [ ] #7 segurança, docs e release v1.0.0
+- [x] #7 segurança, docs e release v1.0.0 (Claude Code, estação do mantenedor)
 
 ## Issue #1 — checklist
 - [x] Teste + correção do `sort` no `list_tickets` (Claude Code, estação do mantenedor)
@@ -23,10 +23,10 @@ Regra: nada de IPs, usuários, tokens ou dados de empresa neste repositório.
 - [x] PR `Closes #1` com CI verde (#8)
 
 ## Onde parei
-Issue #6 implementada e testada contra GLPI 11 real; PR aberto.
+v1.0.0 pronta: Issues #1–#7 implementadas e testadas contra GLPI 11 real.
 
 ## Próximo passo
-Issue #7 (somente leitura, filtros, mascaramento central, README pt-BR/en, release v1.0.0).
+Publicar no npm (dono da conta: `npm publish --access public`); espelho Gitea; GitHub Project.
 
 ## Pendências externas
 - GitHub Project "GLPI MCP": requer `gh auth refresh -h github.com -s project`.

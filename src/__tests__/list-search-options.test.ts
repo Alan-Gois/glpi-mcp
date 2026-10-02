@@ -24,7 +24,7 @@ describe('glpi_list_search_options tool', () => {
         registerListSearchOptions(mockServer, mockClient);
 
         // Mock GLPI GET /listSearchOptions/Computer
-        mockClient.getItems.mockResolvedValue({
+        mockClient.listSearchOptions.mockResolvedValue({
             "1": { name: "Name", group: "General", field: "name", table: "glpi_computers", datatype: "string" },
             "common": "A header row to ignore",
             "167": { name: "Antivírus", group: "Inventory", field: "antivirus", table: "glpi_plugin_inventory", datatype: "string" }
@@ -34,7 +34,7 @@ describe('glpi_list_search_options tool', () => {
             itemtype: 'Computer'
         });
 
-        expect(mockClient.getItems).toHaveBeenCalledWith('listSearchOptions/Computer', {});
+        expect(mockClient.listSearchOptions).toHaveBeenCalledWith('Computer');
 
         expect(result.isError).toBeFalsy();
         const textOutput = result.content[0].text;
@@ -48,7 +48,7 @@ describe('glpi_list_search_options tool', () => {
     it('deve filtrar os campos quando filter é providenciado', async () => {
         registerListSearchOptions(mockServer, mockClient);
 
-        mockClient.getItems.mockResolvedValue({
+        mockClient.listSearchOptions.mockResolvedValue({
             "1": { name: "Name" },
             "3": { name: "Location" },
             "167": { name: "Software / Antivírus" }
@@ -68,7 +68,7 @@ describe('glpi_list_search_options tool', () => {
     it('deve retornar isError=true (Graceful erro em exceção)', async () => {
         registerListSearchOptions(mockServer, mockClient);
 
-        mockClient.getItems.mockRejectedValue(new Error('Unknown ItemType X'));
+        mockClient.listSearchOptions.mockRejectedValue(new Error('Unknown ItemType X'));
 
         const result = await registeredCallback({ itemtype: 'Fornecedor' });
 

@@ -24,6 +24,7 @@ Args:
 Returns:
   A list of validations with IDs, status, and comments.`,
             inputSchema: InputSchema,
+            annotations: { readOnlyHint: true, destructiveHint: false, idempotentHint: true },
         },
         async (params) => {
             try {

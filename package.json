@@ -1,6 +1,6 @@
 {
   "name": "@alan-gois/glpi-mcp",
-  "version": "0.3.0",
+  "version": "1.0.0",
   "description": "MCP server for GLPI: tickets, projects and any itemtype through the GLPI REST API (GLPI 10 and 11)",
   "main": "dist/index.js",
   "bin": {
@@ -10,8 +10,12 @@
   "files": [
     "dist",
     "!dist/__tests__",
+    "!dist/**/*.map",
     "README.md",
-    "LICENSE"
+    "README.pt-BR.md",
+    "LICENSE",
+    "CHANGELOG.md",
+    "docs"
   ],
   "scripts": {
     "build": "tsc",
@@ -19,7 +23,8 @@
     "dev": "tsc --watch",
     "test": "jest",
     "test:watch": "jest --watch",
-    "prepublishOnly": "npm run build && npm test"
+    "prepublishOnly": "npm run build && npm test",
+    "prepare": "npm run build"
   },
   "keywords": [
     "mcp",

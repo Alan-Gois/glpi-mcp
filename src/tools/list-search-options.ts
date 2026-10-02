@@ -10,11 +10,11 @@
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { z } from "zod";
 import { GlpiClient } from "../services/glpi-client.js";
+import { ItemtypeSchema } from "./_shared.js";
 import { truncateIfNeeded } from "../services/formatting.js";
 
 const InputSchema = {
-  itemtype: z
-    .string()
+  itemtype: ItemtypeSchema
     .describe(
       "GLPI item type to list search options for (e.g. 'Computer', 'Ticket', 'User', 'Software', 'Printer', etc.)."
     ),
@@ -71,10 +71,7 @@ Examples:
     async (params) => {
       try {
         // Call GLPI API: GET /listSearchOptions/{itemtype}
-        const options = await client.getItems<Record<string, unknown>>(
-          `listSearchOptions/${params.itemtype}`,
-          {}
-        );
+        const options = await client.listSearchOptions(params.itemtype);
 
         // Parse the response — GLPI returns a flat object keyed by option ID
         const parsed: SearchOption[] = [];
