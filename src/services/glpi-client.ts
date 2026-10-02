@@ -466,6 +466,34 @@ export class GlpiClient {
   }
 
   // ----------------------------------------------------------
+  // Documents (legacy REST API)
+  // ----------------------------------------------------------
+
+  /** POST /Document — multipart upload with the uploadManifest */
+  async uploadDocument(
+    input: Record<string, unknown>,
+    filename: string,
+    content: Uint8Array,
+    mime = "application/octet-stream"
+  ): Promise<{ id: number; message?: string; upload_result?: unknown }> {
+    this.requireLegacy("glpi_document_upload");
+    const form = new FormData();
+    form.append("uploadManifest", JSON.stringify({ input: { ...input, _filename: [filename] } }));
+    form.append("filename[0]", new Blob([content as Uint8Array<ArrayBuffer>], { type: mime }), filename);
+    const response = await this.send("POST", "/Document", form, undefined, { rawBody: true });
+    return (await response.json()) as { id: number; message?: string; upload_result?: unknown };
+  }
+
+  /** GET /Document/:id as binary */
+  async downloadDocument(id: number): Promise<Uint8Array> {
+    this.requireLegacy("glpi_document_download");
+    const response = await this.send("GET", `/Document/${id}`, undefined, { alt: "media" }, {
+      headers: { Accept: "application/octet-stream" },
+    });
+    return new Uint8Array(await response.arrayBuffer());
+  }
+
+  // ----------------------------------------------------------
   // Search
   // ----------------------------------------------------------
 
