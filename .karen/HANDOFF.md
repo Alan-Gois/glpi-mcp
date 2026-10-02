@@ -10,7 +10,7 @@ Regra: nada de IPs, usuários, tokens ou dados de empresa neste repositório.
 - [x] #3 ferramentas de projetos (Claude Code, estação do mantenedor)
 - [x] #4 sessão, perfis, entidades e configuração (Claude Code, estação do mantenedor)
 - [x] #5 documentos (upload/download) (Claude Code, estação do mantenedor)
-- [ ] #6 ações em massa
+- [x] #6 ações em massa (Claude Code, estação do mantenedor)
 - [ ] #7 segurança, docs e release v1.0.0
 
 ## Issue #1 — checklist
@@ -23,10 +23,10 @@ Regra: nada de IPs, usuários, tokens ou dados de empresa neste repositório.
 - [x] PR `Closes #1` com CI verde (#8)
 
 ## Onde parei
-Issue #5 implementada e testada contra GLPI 11 real; PR aberto.
+Issue #6 implementada e testada contra GLPI 11 real; PR aberto.
 
 ## Próximo passo
-Issue #6 (ações em massa).
+Issue #7 (somente leitura, filtros, mascaramento central, README pt-BR/en, release v1.0.0).
 
 ## Pendências externas
 - GitHub Project "GLPI MCP": requer `gh auth refresh -h github.com -s project`.
