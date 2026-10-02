@@ -7,7 +7,7 @@ Regra: nada de IPs, usuários, tokens ou dados de empresa neste repositório.
 ## Roteiro (Issues)
 - [x] #1 fundação (CI, dependências, SDK, `list_tickets` no GLPI 11) — PR #8
 - [x] #2 CRUD genérico de qualquer itemtype (Claude Code, estação do mantenedor)
-- [ ] #3 ferramentas de projetos
+- [x] #3 ferramentas de projetos (Claude Code, estação do mantenedor)
 - [ ] #4 sessão, perfis, entidades e configuração
 - [ ] #5 documentos (upload/download)
 - [ ] #6 ações em massa
@@ -23,10 +23,10 @@ Regra: nada de IPs, usuários, tokens ou dados de empresa neste repositório.
 - [x] PR `Closes #1` com CI verde (#8)
 
 ## Onde parei
-Issue #2 implementada e testada contra GLPI 11 real; PR aberto.
+Issue #3 implementada e testada contra GLPI 11 real; PR aberto.
 
 ## Próximo passo
-Issue #3 (ferramentas de projetos).
+Issue #4 (sessão, perfis, entidades e configuração).
 
 ## Pendências externas
 - GitHub Project "GLPI MCP": requer `gh auth refresh -h github.com -s project`.
