@@ -74,6 +74,10 @@ function loadConfig(): GlpiConfig {
     config.appToken = process.env.GLPI_APP_TOKEN;
   }
 
+  if (process.env.GLPI_TOKENS_IN_QUERY === "true") {
+    config.tokensInQuery = true;
+  }
+
   if (process.env.GLPI_USERNAME && process.env.GLPI_PASSWORD) {
     config.username = process.env.GLPI_USERNAME;
     config.password = process.env.GLPI_PASSWORD;

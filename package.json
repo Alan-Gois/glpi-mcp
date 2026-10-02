@@ -1,17 +1,25 @@
 {
-  "name": "glpi-mcp-server",
+  "name": "@alan-gois/glpi-mcp",
   "version": "0.3.0",
-  "description": "MCP Server for GLPI IT Service Management - Connect AI assistants to your GLPI instance",
+  "description": "MCP server for GLPI: tickets, projects and any itemtype through the GLPI REST API (GLPI 10 and 11)",
   "main": "dist/index.js",
   "bin": {
+    "glpi-mcp": "dist/index.js",
     "glpi-mcp-server": "dist/index.js"
   },
+  "files": [
+    "dist",
+    "!dist/__tests__",
+    "README.md",
+    "LICENSE"
+  ],
   "scripts": {
     "build": "tsc",
     "start": "node dist/index.js",
     "dev": "tsc --watch",
     "test": "jest",
-    "test:watch": "jest --watch"
+    "test:watch": "jest --watch",
+    "prepublishOnly": "npm run build && npm test"
   },
   "keywords": [
     "mcp",
@@ -21,12 +29,27 @@
     "ticketing",
     "model-context-protocol",
     "claude",
-    "ai"
+    "ai",
+    "projects"
   ],
-  "author": "",
+  "author": "Alan Gois (https://github.com/Alan-Gois)",
+  "contributors": [
+    "Ageu Bonfim (https://github.com/ageugyn) - original glpi-mcp-server"
+  ],
   "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Alan-Gois/glpi-mcp.git"
+  },
+  "bugs": {
+    "url": "https://github.com/Alan-Gois/glpi-mcp/issues"
+  },
+  "homepage": "https://github.com/Alan-Gois/glpi-mcp#readme",
+  "publishConfig": {
+    "access": "public"
+  },
   "dependencies": {
-    "@modelcontextprotocol/sdk": "^1.12.0",
+    "@modelcontextprotocol/sdk": "^1.31.0",
     "dotenv": "^17.3.1",
     "zod": "^3.24.0"
   },
@@ -38,6 +61,6 @@
     "typescript": "^5.7.0"
   },
   "engines": {
-    "node": ">=18.0.0"
+    "node": ">=20.0.0"
   }
 }

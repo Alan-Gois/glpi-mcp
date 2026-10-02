@@ -10,6 +10,8 @@ export interface GlpiConfig {
   apiVersion?: number;
   /** App-Token for API client identification (optional in some setups) */
   appToken?: string;
+  /** Also send session/app tokens in the query string (legacy API; only for WAFs that drop custom headers) */
+  tokensInQuery?: boolean;
   /** User token for authentication (v10 legacy) */
   userToken?: string;
   /** Username for authentication (v10 legacy) */
