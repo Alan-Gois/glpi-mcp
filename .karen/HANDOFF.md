@@ -9,7 +9,7 @@ Regra: nada de IPs, usuários, tokens ou dados de empresa neste repositório.
 - [x] #2 CRUD genérico de qualquer itemtype (Claude Code, estação do mantenedor)
 - [x] #3 ferramentas de projetos (Claude Code, estação do mantenedor)
 - [x] #4 sessão, perfis, entidades e configuração (Claude Code, estação do mantenedor)
-- [ ] #5 documentos (upload/download)
+- [x] #5 documentos (upload/download) (Claude Code, estação do mantenedor)
 - [ ] #6 ações em massa
 - [ ] #7 segurança, docs e release v1.0.0
 
@@ -23,10 +23,10 @@ Regra: nada de IPs, usuários, tokens ou dados de empresa neste repositório.
 - [x] PR `Closes #1` com CI verde (#8)
 
 ## Onde parei
-Issue #4 implementada e testada contra GLPI 11 real; PR aberto.
+Issue #5 implementada e testada contra GLPI 11 real; PR aberto.
 
 ## Próximo passo
-Issue #5 (documentos: upload e download).
+Issue #6 (ações em massa).
 
 ## Pendências externas
 - GitHub Project "GLPI MCP": requer `gh auth refresh -h github.com -s project`.

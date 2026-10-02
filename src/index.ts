@@ -24,6 +24,10 @@ import { registerProjectTools } from "./tools/projects.js";
 // Tools — Session, profiles, entities, configuration
 import { registerSessionTools } from "./tools/session.js";
 
+// Tools — Documents
+import { registerDocumentTools } from "./tools/documents.js";
+import { loadFileSandbox } from "./security/files.js";
+
 // Tools — Ticket Lifecycle
 import { registerListTickets } from "./tools/list-tickets.js";
 import { registerGetTicket } from "./tools/get-ticket.js";
@@ -200,6 +204,9 @@ async function main(): Promise<void> {
 
   // -- Session, profiles, entities, configuration
   registerSessionTools(server, client);
+
+  // -- Documents
+  registerDocumentTools(server, client, loadFileSandbox());
 
   console.error(`${toolCount} tools registrados`);
 

@@ -92,6 +92,8 @@ After saving the config, restart Claude Desktop. You should see the GLPI tools a
 | `GLPI_APP_TOKEN` | No | App token from API client config. |
 | `GLPI_TOKENS_IN_QUERY` | No | `true` to also send tokens in the query string (only for WAFs that strip custom headers). Default: off. |
 | `GLPI_ALLOW_DELETE` | No | `true` to register `glpi_delete_items` (trash by default, `force_purge` to delete permanently). Default: off. |
+| `GLPI_MCP_FILES_DIR` | No | Directory where document tools may read/write local files. Default: none (base64 only). |
+| `GLPI_MCP_MAX_FILE_MB` | No | Max document size in MB. Default: 10. |
 | `GLPI_OAUTH_CLIENT_ID` | v11 required** | OAuth2 Client ID for GLPI 11 HLAPI. |
 | `GLPI_OAUTH_CLIENT_SECRET` | v11 required** | OAuth2 Client Secret for GLPI 11 HLAPI. |
 
@@ -439,6 +441,15 @@ Dropdown fields come with the id and the name (`projectstates_id` + `projectstat
 | `glpi_get_glpi_config` | `getGlpiConfig` (use `keys` to limit the output) |
 
 Passwords, tokens, keys, cookies and hashes are masked in these outputs. `lostPassword` is not exposed.
+
+## Documents
+
+| Tool | What it does |
+|---|---|
+| `glpi_document_upload` | Upload base64 content or a local file and optionally link it to an item (`Document_Item`) |
+| `glpi_document_download` | Download to a local file (never overwrites) or as base64; SHA-1 checked against GLPI |
+
+Local paths only work inside `GLPI_MCP_FILES_DIR` (no `..`, no absolute paths or symlinks outside it). Without it, only base64 is accepted. Size limit: `GLPI_MCP_MAX_FILE_MB` (default 10).
 
 ## License
 
