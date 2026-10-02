@@ -415,6 +415,20 @@ Work with the legacy REST API (`GLPI_API_VERSION=10`, also available in GLPI 11)
 | `glpi_update_items` | `PUT /:itemtype` (one or many) |
 | `glpi_delete_items` | `DELETE /:itemtype` — only with `GLPI_ALLOW_DELETE=true` |
 
+## Project tools
+
+| Tool | What it does |
+|---|---|
+| `glpi_project_list` | Projects with state, parent, manager, progress; filters by name, state, parent |
+| `glpi_project_get` | Project + subprojects + team + task tree (with task teams) |
+| `glpi_project_create` / `glpi_project_update` | Create/update projects and subprojects (`parent_id`) |
+| `glpi_project_task_list` | Tasks of a project as a tree (or flat) |
+| `glpi_project_task_create` / `glpi_project_task_update` | Tasks and subtasks (`parent_task_id`), state, %, dates, `planned_duration_hours`, milestone |
+| `glpi_project_team_add` | Add a User, Group, Supplier or Contact to a project or task team |
+| `glpi_project_states_list` | Project states (and project/task types) |
+
+Dropdown fields come with the id and the name (`projectstates_id` + `projectstates_id_name`).
+
 ## License
 
 MIT. See [LICENSE](LICENSE). Original work by Ageu Bonfim ([ageugyn/glpi-mcp-server](https://github.com/ageugyn/glpi-mcp-server)).

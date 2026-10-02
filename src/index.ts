@@ -18,6 +18,9 @@ import { loadPolicy } from "./security/policy.js";
 // Tools — Generic CRUD (any itemtype)
 import { registerItemTools } from "./tools/items.js";
 
+// Tools — Projects
+import { registerProjectTools } from "./tools/projects.js";
+
 // Tools — Ticket Lifecycle
 import { registerListTickets } from "./tools/list-tickets.js";
 import { registerGetTicket } from "./tools/get-ticket.js";
@@ -188,6 +191,9 @@ async function main(): Promise<void> {
 
   // -- Generic CRUD (any itemtype)
   registerItemTools(server, client, policy);
+
+  // -- Projects
+  registerProjectTools(server, client);
 
   console.error(`${toolCount} tools registrados`);
 
