@@ -1,0 +1,33 @@
+# HANDOFF — glpi-mcp
+
+Repositório público: MCP geral do GLPI (API REST legada e v2), continuação de `ageugyn/glpi-mcp-server`.
+Primário: GitHub `Alan-Gois/glpi-mcp` (Issues/PRs). Espelho: Gitea (pendente de criação do repositório).
+Regra: nada de IPs, usuários, tokens ou dados de empresa neste repositório.
+
+## Roteiro (Issues)
+- [ ] #1 fundação (CI, dependências, SDK, `list_tickets` no GLPI 11) — em andamento
+- [ ] #2 CRUD genérico de qualquer itemtype
+- [ ] #3 ferramentas de projetos
+- [ ] #4 sessão, perfis, entidades e configuração
+- [ ] #5 documentos (upload/download)
+- [ ] #6 ações em massa
+- [ ] #7 segurança, docs e release v1.0.0
+
+## Issue #1 — checklist
+- [x] Teste + correção do `sort` no `list_tickets` (Claude Code, estação do mantenedor)
+- [x] Tokens só em cabeçalhos por padrão; `GLPI_TOKENS_IN_QUERY` opcional (Claude Code, estação do mantenedor)
+- [x] package.json, LICENSE, .gitignore, crédito no README (Claude Code, estação do mantenedor)
+- [x] SDK 1.31.0 + audit zerado (Claude Code, estação do mantenedor)
+- [x] CI GitHub Actions Node 20/22/24 (Claude Code, estação do mantenedor)
+- [x] Teste manual contra GLPI 11 real (Claude Code, estação do mantenedor)
+- [ ] PR `Closes #1` com CI verde
+
+## Onde parei
+Issue #1 implementada e validada localmente; abrindo o PR.
+
+## Próximo passo
+Acompanhar CI do PR #1; depois Issue #2 (CRUD genérico).
+
+## Pendências externas
+- GitHub Project "GLPI MCP": requer `gh auth refresh -h github.com -s project`.
+- Espelho Gitea: criar o repositório vazio (push-to-create desativado) e enviar `main` + branches.

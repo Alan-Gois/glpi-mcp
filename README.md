@@ -4,6 +4,9 @@ Connect AI assistants (Claude, ChatGPT, Copilot) to your **GLPI** IT Service Man
 
 > **First MCP Server for GLPI** — Manage tickets, search assets, and automate IT operations through natural language.
 
+> This repository continues [ageugyn/glpi-mcp-server](https://github.com/ageugyn/glpi-mcp-server) by Ageu Bonfim (MIT),
+> keeping its full history, with the goal of covering the whole GLPI REST API, including projects.
+
 ## Features
 
 - **List Tickets** — View open, assigned, waiting, or all tickets
@@ -43,8 +46,8 @@ In your GLPI instance:
 ### 3. Install & Build
 
 ```bash
-git clone https://github.com/your-user/glpi-mcp-server.git
-cd glpi-mcp-server
+git clone https://github.com/Alan-Gois/glpi-mcp.git
+cd glpi-mcp
 npm install
 npm run build
 ```
@@ -62,7 +65,7 @@ Add to your `claude_desktop_config.json`:
   "mcpServers": {
     "glpi": {
       "command": "node",
-      "args": ["/absolute/path/to/glpi-mcp-server/dist/index.js"],
+      "args": ["/absolute/path/to/glpi-mcp/dist/index.js"],
       "env": {
         "GLPI_URL": "https://your-glpi-instance.com",
         "GLPI_USER_TOKEN": "your_user_token_here",
@@ -87,6 +90,7 @@ After saving the config, restart Claude Desktop. You should see the GLPI tools a
 | `GLPI_USERNAME` | v11 required** | GLPI username. Also valid for GLPI 10 when used with `GLPI_PASSWORD`. |
 | `GLPI_PASSWORD` | v11 required** | GLPI password. Also valid for GLPI 10 when used with `GLPI_USERNAME`. |
 | `GLPI_APP_TOKEN` | No | App token from API client config. |
+| `GLPI_TOKENS_IN_QUERY` | No | `true` to also send tokens in the query string (only for WAFs that strip custom headers). Default: off. |
 | `GLPI_OAUTH_CLIENT_ID` | v11 required** | OAuth2 Client ID for GLPI 11 HLAPI. |
 | `GLPI_OAUTH_CLIENT_SECRET` | v11 required** | OAuth2 Client Secret for GLPI 11 HLAPI. |
 
@@ -208,7 +212,7 @@ For use with Claude Code, create a `.mcp.json` in your project root.
   "mcpServers": {
     "glpi": {
       "command": "node",
-      "args": ["/absolute/path/to/glpi-mcp-server/dist/index.js"],
+      "args": ["/absolute/path/to/glpi-mcp/dist/index.js"],
       "env": {
         "GLPI_URL": "https://your-glpi-instance.com",
         "GLPI_API_VERSION": "11",
@@ -228,7 +232,7 @@ For use with Claude Code, create a `.mcp.json` in your project root.
   "mcpServers": {
     "glpi": {
       "command": "node",
-      "args": ["/absolute/path/to/glpi-mcp-server/dist/index.js"],
+      "args": ["/absolute/path/to/glpi-mcp/dist/index.js"],
       "env": {
         "GLPI_URL": "https://your-glpi-instance.com",
         "GLPI_USER_TOKEN": "your_user_token_here"
@@ -251,7 +255,7 @@ npx @modelcontextprotocol/inspector node dist/index.js
 ## Project Structure
 
 ```
-glpi-mcp-server/
+glpi-mcp/
 ├── src/
 │   ├── index.ts                  # Entry point, server setup
 │   ├── types.ts                  # TypeScript types and constants
@@ -324,7 +328,7 @@ This section serves as the continuous knowledge base for project progress, maint
 
 ### Production Notes & Tips
 
-- **WAF / Firewall Bypass**: Strict corporate firewalls often strip custom HTTP headers like `App-Token` or `Session-Token`, causing `400 ERROR_WRONG_APP_TOKEN_PARAMETER` errors. To ensure maximum compatibility, this MCP server automatically injects tokens into the URL query string (`?app_token=...`) instead of HTTP headers for GLPI 10 legacy authentication.
+- **WAF / Firewall Bypass**: Strict corporate firewalls often strip custom HTTP headers like `App-Token` or `Session-Token`, causing `400 ERROR_WRONG_APP_TOKEN_PARAMETER` errors. To ensure maximum compatibility, set `GLPI_TOKENS_IN_QUERY=true` to also send the tokens in the URL query string (`?app_token=...&session_token=...`) on the legacy API. It is off by default because URLs end up in proxy and server logs.
 - **Group Search**: GLPI uses hierarchical group names (e.g., `TECH_DEPT > INFRA > NETWORKS`). When searching tickets by group, always use the `contains` search type with the last part of the name (the "leaf") for best results.
 - **Assignment Required**: In some `glpi11` environments, you **must** assign a technician to a ticket before the API allows registering a solution. If you get a 400 error when solving, check if the ticket has an assigned technician.
 - **Escalade Plugin**: If your instance uses the *Escalade* plugin, you can search for escalated tickets using field ID `1881` ("Grupo afetado pela escalada").
@@ -398,4 +402,4 @@ Technical specification for the Service Catalog core integration.
 
 ## License
 
-MIT
+MIT. See [LICENSE](LICENSE). Original work by Ageu Bonfim ([ageugyn/glpi-mcp-server](https://github.com/ageugyn/glpi-mcp-server)).

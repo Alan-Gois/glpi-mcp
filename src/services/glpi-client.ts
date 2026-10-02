@@ -75,7 +75,6 @@ export class GlpiClient {
       "Content-Type": "application/x-www-form-urlencoded",
       "Authorization": `Basic ${credentials}`,
     };
-    // WAF Bypass: App-Token is sent via querystring, so we do not include it here
 
     const body = new URLSearchParams({
       grant_type: "password",
@@ -114,7 +113,7 @@ export class GlpiClient {
       "Content-Type": "application/json",
     };
 
-    // WAF Bypass: App-Token is sent via querystring, so we do not include it in headers here
+    if (this.config.appToken) headers["App-Token"] = this.config.appToken;
 
     if (this.config.userToken) {
       headers["Authorization"] = `user_token ${this.config.userToken}`;
@@ -130,7 +129,7 @@ export class GlpiClient {
     }
 
     const response = await this.fetchWithTimeout(
-      `${this.baseUrl}/initSession${this.config.appToken ? `?app_token=${this.config.appToken}` : ""}`,
+      `${this.baseUrl}/initSession${this.config.tokensInQuery && this.config.appToken ? `?${new URLSearchParams({ app_token: this.config.appToken })}` : ""}`,
       { method: "GET", headers }
     );
 
@@ -225,8 +224,8 @@ export class GlpiClient {
       headers["Authorization"] = `Bearer ${token}`;
     } else {
       headers["Session-Token"] = token;
+      if (this.config.appToken) headers["App-Token"] = this.config.appToken;
     }
-    // WAF Bypass: App-Token is sent via querystring, so we do not include it here
     return headers;
   }
 
@@ -262,9 +261,9 @@ export class GlpiClient {
 
         let url = `${this.baseUrl}${path}`;
         
-        // Inject tokens into query string to bypass strict WAFs dropping custom headers
+        // Opt-in: also send tokens in the query string for WAFs that drop custom headers
         const finalQueryParams: Record<string, string> = { ...queryParams };
-        if (!this.isV11) {
+        if (!this.isV11 && this.config.tokensInQuery) {
           if (this.config.appToken) finalQueryParams.app_token = this.config.appToken;
           finalQueryParams.session_token = token;
         }
@@ -416,7 +415,9 @@ export class GlpiClient {
     const params: Record<string, string> = {
       range: `0-${limit - 1}`,
       order: "DESC",
-      sort: this.isV11 ? "date_mod" : "15", // 15 is date_mod in legacy
+      // GET /:itemtype only accepts a field name in `sort` (the search option id "15" is
+      // rejected by GLPI 11 with HTTP 400 "sort param is not a field of glpi_tickets").
+      sort: "date_mod",
       expand_dropdowns: "true",
     };
 
